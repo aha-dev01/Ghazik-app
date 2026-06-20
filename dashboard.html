@@ -138,7 +138,7 @@
     function logout() { auth.signOut().then(() => window.location.href = 'index.html'); }
     function shareToWhatsApp() { 
         const shopName = document.getElementById('shopTitle').innerText;
-        const url = window.location.origin + "/view.html?id=" + auth.currentUser.uid; 
+        const url = window.location.origin + "Ghazik-app/view.html?id=" + auth.currentUser.uid; 
         const text = `*مرحباً بكم في ${shopName}* ⛽%0A%0Aيمكنكم الآن متابعة أسعار الغاز المتوفرة لدينا لحظة بلحظة عبر الرابط التالي:%0A${url}%0A%0Aشكراً لتعاملكم معنا!`;
         window.open(`https://wa.me/?text=${text}`, '_blank'); 
     }
