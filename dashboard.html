@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - Sawa Digital Solutions</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { background: #eef2f7; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: auto; }
+        
+        /* الهيدر المحدث */
+        .header-section { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+        .top-nav { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; padding: 0 5px; }
+        .top-nav a { color: #64748b; text-decoration: none; transition: 0.3s; }
+        .top-nav a:hover { color: #34495e; }
+        
+        .main-header { display: flex; align-items: center; justify-content: space-between; background: white; padding: 12px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .shop-info { display: flex; align-items: center; gap: 12px; overflow: hidden; }
+        .icon-box { background: #e67e22; color: white; min-width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 15px; box-shadow: 0 4px 6px rgba(230, 126, 34, 0.3); }
+        
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .option { padding: 10px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; text-align: center; font-size: 13px; transition: 0.3s; }
+        .option:has(input:checked) { background: #34495e; color: white; border-color: #34495e; }
+        .option input { display: none; }
+        input[type="number"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .btn-add { width: 100%; padding: 12px; background: #34495e; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-share { width: 100%; padding: 12px; background: #22c55e; color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .stock-item { background: #fff; padding: 16px; border-radius: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #e2e8f0; }
+        .price-tag { font-weight: bold; color: #1e293b; font-size: 16px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    
+    <div class="header-section">
+        <div class="top-nav">
+            <a href="about.html"><i class="fas fa-info-circle"></i> حول التطبيق</a>
+            <a href="contact.html"><i class="fas fa-headset"></i> الدعم الفني</a>
+        </div>
+        
+        <div class="main-header">
+            <div class="shop-info">
+                <div class="icon-box"><i class="fas fa-fire fa-lg"></i></div>
+                <h2 id="shopTitle" style="margin:0; font-size: 16px; color: #34495e;">جاري التحميل...</h2>
+            </div>
+            <div class="header-actions" style="display: flex; gap: 15px; align-items: center;">
+                <a href="settings.html" style="color: #34495e;"><i class="fas fa-cog fa-lg"></i></a>
+                <button onclick="logout()" style="background:none; border:none; color:#c0392b; cursor:pointer;"><i class="fas fa-sign-out-alt fa-lg"></i></button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>إضافة / تحديث أسطوانة</h3>
+        <div class="grid">
+            <label class="option"><input type="radio" name="gasType" value="غاز أمان" checked> غاز أمان</label>
+            <label class="option"><input type="radio" name="gasType" value="غاز الوطنية"> غاز الوطنية</label>
+            <label class="option"><input type="radio" name="gasType" value="غاز أبرسي"> غاز أبرسي</label>
+            <label class="option"><input type="radio" name="gasType" value="غاز إيران"> غاز إيران</label>
+            <label class="option"><input type="radio" name="gasType" value="غاز قادرة"> غاز قادرة</label>
+            <label class="option"><input type="radio" name="gasType" value="غاز سوداغاز"> غاز سوداغاز</label>
+        </div>
+        <input type="number" id="gasPrice" placeholder="السعر (ج.س)">
+        <div class="status-grid">
+            <label class="option"><input type="radio" name="gasStatus" value="متوفر" checked> متوفر</label>
+            <label class="option"><input type="radio" name="gasStatus" value="قليل"> قليل</label>
+            <label class="option"><input type="radio" name="gasStatus" value="غير متوفر"> غير متوفر</label>
+        </div>
+        <button class="btn-add" onclick="addItem()">حفظ التعديلات</button>
+        <button class="btn-share" onclick="shareToWhatsApp()"><i class="fab fa-whatsapp"></i> مشاركة القائمة</button>
+    </div>
+    
+    <div class="card">
+        <h3>المخزون الحالي</h3>
+        <div id="stockList"></div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyD8FIOQZObnxknxSG9OzFMjaMQUBSBMNUQ", authDomain: "gastracker-41f9e.firebaseapp.com", projectId: "gastracker-41f9e", storageBucket: "gastracker-41f9e.firebasestorage.app", messagingSenderId: "921863849230", appId: "1:921863849230:web:188b5e09c18b9994e2035f" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth(); const db = firebase.firestore();
+
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            db.collection("distributors").doc(user.uid).get().then(doc => {
+                if (doc.exists) document.getElementById('shopTitle').innerText = doc.data().shopName;
+            });
+            loadStock();
+        } else { window.location.href = 'index.html'; }
+    });
+
+    async function addItem() {
+        const type = document.querySelector('input[name="gasType"]:checked').value;
+        const priceInput = document.getElementById('gasPrice').value;
+        const status = document.querySelector('input[name="gasStatus"]:checked').value;
+        const now = new Date().toLocaleDateString('ar-EG');
+        
+        if (!priceInput) return Swal.fire('تنبيه', 'الرجاء إدخال السعر', 'warning');
+
+        const q = await db.collection("gas_inventory").where("distributorId", "==", auth.currentUser.uid).where("cylinderType", "==", type).get();
+        if (!q.empty) {
+            await q.docs[0].ref.update({ price: parseInt(priceInput), status: status, lastUpdated: now });
+        } else {
+            await db.collection("gas_inventory").add({ distributorId: auth.currentUser.uid, cylinderType: type, price: parseInt(priceInput), status: status, lastUpdated: now });
+        }
+        document.getElementById('gasPrice').value = "";
+        Swal.fire('تم الحفظ!', 'تم تحديث البيانات بنجاح', 'success');
+    }
+
+    function loadStock() {
+        db.collection("gas_inventory").where("distributorId", "==", auth.currentUser.uid).onSnapshot(snapshot => {
+            document.getElementById('stockList').innerHTML = snapshot.docs.map(doc => {
+                const item = doc.data();
+                return `<div class="stock-item">
+                            <div><strong>${item.cylinderType}</strong><div class="price-tag">${item.price} ج.س</div><small style="color:#999; font-size:10px;">${item.lastUpdated || ''}</small></div>
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <span style="font-weight:bold; color:${item.status === 'متوفر' ? '#22c55e' : (item.status === 'قليل' ? '#f59e0b' : '#ef4444')}">${item.status}</span>
+                                <i class="fas fa-trash-alt" style="color:#c0392b; cursor:pointer;" onclick="deleteItem('${doc.id}')"></i>
+                            </div>
+                        </div>`;
+            }).join('');
+        });
+    }
+
+    async function deleteItem(docId) {
+        const result = await Swal.fire({ title: 'هل أنت متأكد؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'نعم، احذفه' });
+        if (result.isConfirmed) { await db.collection("gas_inventory").doc(docId).delete(); }
+    }
+
+    function logout() { auth.signOut().then(() => window.location.href = 'index.html'); }
+    function shareToWhatsApp() { 
+        const shopName = document.getElementById('shopTitle').innerText;
+        const url = window.location.origin + "/view.html?id=" + auth.currentUser.uid; 
+        const text = `*مرحباً بكم في ${shopName}* ⛽%0A%0Aيمكنكم الآن متابعة أسعار الغاز المتوفرة لدينا لحظة بلحظة عبر الرابط التالي:%0A${url}%0A%0Aشكراً لتعاملكم معنا!`;
+        window.open(`https://wa.me/?text=${text}`, '_blank'); 
+    }
+</script>
+</body>
+</html>

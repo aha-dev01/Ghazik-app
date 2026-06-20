@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>غازك | المنصة السودانية للغاز</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #f8fafc; margin: 0; color: #334155; }
+        .hero { background: linear-gradient(135deg, #1e293b, #f97316); color: white; padding: 30px 20px; text-align: center; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; }
+        .nav-links { display: flex; justify-content: center; gap: 50px; margin-bottom: 15px; }
+        .nav-links a { color: white; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .container { max-width: 500px; margin: auto; padding: 20px; }
+        
+        /* تصميم البطاقة مع جعل الأيقونة في اليسار */
+        .card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+            margin-bottom: 15px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            transition: 0.3s; 
+        }
+        .card:hover { transform: translateY(-3px); }
+        
+        .store-icon { background: #fff7ed; padding: 15px; border-radius: 15px; color: #f97316; font-size: 20px; }
+        .footer-brand { text-align: center; padding: 30px 20px; color: #94a3b8; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <div class="nav-links">
+        <a href="about1.html"><i class="fas fa-info-circle"></i> حول التطبيق</a>
+        <a href="contact1.html"><i class="fas fa-headset"></i> اتصل بنا</a>
+    </div>
+    <i class="fas fa-fire fa-3x" style="color: white; margin-top: 10px;"></i>
+    <h1 style="margin: 15px 0 5px;">غازك</h1>
+    <p style="margin: 0; font-size: 14px;">ريِّح بالك ، مع تطبيق غازك | غازك موجود وبسعر اليوم كمان </p>
+</div>
+
+<div class="container" id="shopsList">جاري تحميل المتاجر...</div>
+
+<div class="footer-brand">
+    <p>تطوير وتشغيل</p>
+    <strong style="color: #3b82f6;">شركة سوا للحلول الرقمية | Sawa Digital Solutions</strong>
+</div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyD8FIOQZObnxknxSG9OzFMjaMQUBSBMNUQ", authDomain: "gastracker-41f9e.firebaseapp.com", projectId: "gastracker-41f9e", storageBucket: "gastracker-41f9e.firebasestorage.app", messagingSenderId: "921863849230", appId: "1:921863849230:web:188b5e09c18b9994e2035f" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    db.collection("distributors").onSnapshot(snapshot => {
+        document.getElementById('shopsList').innerHTML = snapshot.docs.map(doc => `
+            <div class="card" onclick="window.location.href='shop.html?id=${doc.id}'">
+                <div>
+                    <h3 style="margin:0;">${doc.data().shopName}</h3>
+                    <p style="font-size:13px; color:#64748b; margin:5px 0 0;"><i class="fas fa-map-marker-alt"></i> ${doc.data().mapDesc || 'لا يوجد عنوان'}</p>
+                </div>
+                <div class="store-icon">
+                    <i class="fas fa-store"></i>
+                </div>
+            </div>
+        `).join('');
+    });
+</script>
+</body>
+</html>

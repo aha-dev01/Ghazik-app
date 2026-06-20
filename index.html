@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghazik</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <style>
+        body { background: linear-gradient(135deg, #f0f2f5 0%, #d9e2ec 100%); font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 30px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .logo { font-size: 60px; color: #e67e22; margin-bottom: 20px; }
+        h1 { color: #1a1a2e; margin-bottom: 10px; }
+        p { color: #777; margin-bottom: 30px; }
+        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; font-weight: bold; text-decoration: none; transition: 0.3s; box-sizing: border-box; }
+        .btn-login { background: #1a1a2e; color: white; }
+        .btn-login:hover { background: #252545; }
+        .btn-reg { background: transparent; color: #1a1a2e; border: 2px solid #1a1a2e; }
+        .btn-reg:hover { background: #1a1a2e; color: white; }
+        .footer-text { margin-top: 30px; font-size: 12px; color: #e67e22; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo"><i class="fas fa-fire"></i></div>
+    <h1>مرحباً بك</h1>
+    <p>تطبيق إدارة نقاط توزيع غاز الطبخ</p>
+    
+    <a href="login.html" class="btn btn-login">تسجيل الدخول</a>
+    <a href="regist.html" class="btn btn-reg">إنشاء حساب جديد</a>
+    
+    <div class="footer-text">شركة سوا للحلول الرقمية | Sawa Digital Solutions</div>
+</div>
+
+<script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD8FIOQZObnxknxSG9OzFMjaMQUBSBMNUQ",
+      authDomain: "gastracker-41f9e.firebaseapp.com",
+      projectId: "gastracker-41f9e",
+      storageBucket: "gastracker-41f9e.firebasestorage.app",
+      messagingSenderId: "921863849230",
+      appId: "1:921863849230:web:188b5e09c18b9994e2035f"
+    };
+    
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    
+    // التحقق التلقائي: إذا كان المستخدم مسجل دخول بالفعل، ينقله للوحة التحكم
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            window.location.href = 'dashboard.html';
+        }
+    });
+</script>
+
+</body>
+</html>
