@@ -13,15 +13,16 @@
         body { background: #eef2f7; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 500px; margin: auto; }
         
-        /* الهيدر المحدث */
         .header-section { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
         .top-nav { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; padding: 0 5px; }
         .top-nav a { color: #64748b; text-decoration: none; transition: 0.3s; }
-        .top-nav a:hover { color: #34495e; }
+        
+        /* شريط الحالة الجديد */
+        .status-bar { background: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
         .main-header { display: flex; align-items: center; justify-content: space-between; background: white; padding: 12px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
         .shop-info { display: flex; align-items: center; gap: 12px; overflow: hidden; }
-        .icon-box { background: #e67e22; color: white; min-width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 15px; box-shadow: 0 4px 6px rgba(230, 126, 34, 0.3); }
+        .icon-box { background: #e67e22; color: white; min-width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 15px; }
         
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
@@ -31,6 +32,7 @@
         .option input { display: none; }
         input[type="number"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
         .btn-add { width: 100%; padding: 12px; background: #34495e; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-holiday { width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .btn-share { width: 100%; padding: 12px; background: #22c55e; color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .stock-item { background: #fff; padding: 16px; border-radius: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #e2e8f0; }
         .price-tag { font-weight: bold; color: #1e293b; font-size: 16px; }
@@ -55,6 +57,11 @@
                 <button onclick="logout()" style="background:none; border:none; color:#c0392b; cursor:pointer;"><i class="fas fa-sign-out-alt fa-lg"></i></button>
             </div>
         </div>
+    </div>
+
+    <div class="status-bar">
+        <span>الحالة: <b id="statusDisplay">مفتوح</b></span>
+        <button id="holidayBtn" onclick="toggleHoliday()" style="border:none; background:#f1f5f9; padding:5px 12px; border-radius:8px; cursor:pointer; font-size:12px;">تغيير الوضع</button>
     </div>
     
     <div class="card">
@@ -91,27 +98,36 @@
 
     auth.onAuthStateChanged((user) => {
         if (user) {
-            db.collection("distributors").doc(user.uid).get().then(doc => {
-                if (doc.exists) document.getElementById('shopTitle').innerText = doc.data().shopName;
+            db.collection("distributors").doc(user.uid).onSnapshot(doc => {
+                const data = doc.data();
+                document.getElementById('shopTitle').innerText = data.shopName;
+                const isClosed = data.isClosed || false;
+                document.getElementById('statusDisplay').innerText = isClosed ? 'مغلق' : 'مفتوح';
+                document.getElementById('holidayBtn').innerText = isClosed ? 'فتح' : 'إغلاق';
+                document.getElementById('statusDisplay').style.color = isClosed ? '#e74c3c' : '#22c55e';
             });
             loadStock();
         } else { window.location.href = 'index.html'; }
     });
 
+    async function toggleHoliday() {
+        const user = auth.currentUser;
+        const docRef = db.collection("distributors").doc(user.uid);
+        const doc = await docRef.get();
+        const currentStatus = doc.data().isClosed || false;
+        await docRef.update({ isClosed: !currentStatus });
+    }
+
+    // ... (بقية وظائف addItem و loadStock و غيرها تبقى كما هي في كودك)
     async function addItem() {
         const type = document.querySelector('input[name="gasType"]:checked').value;
         const priceInput = document.getElementById('gasPrice').value;
         const status = document.querySelector('input[name="gasStatus"]:checked').value;
         const now = new Date().toLocaleDateString('ar-EG');
-        
         if (!priceInput) return Swal.fire('تنبيه', 'الرجاء إدخال السعر', 'warning');
-
         const q = await db.collection("gas_inventory").where("distributorId", "==", auth.currentUser.uid).where("cylinderType", "==", type).get();
-        if (!q.empty) {
-            await q.docs[0].ref.update({ price: parseInt(priceInput), status: status, lastUpdated: now });
-        } else {
-            await db.collection("gas_inventory").add({ distributorId: auth.currentUser.uid, cylinderType: type, price: parseInt(priceInput), status: status, lastUpdated: now });
-        }
+        if (!q.empty) { await q.docs[0].ref.update({ price: parseInt(priceInput), status: status, lastUpdated: now }); }
+        else { await db.collection("gas_inventory").add({ distributorId: auth.currentUser.uid, cylinderType: type, price: parseInt(priceInput), status: status, lastUpdated: now }); }
         document.getElementById('gasPrice').value = "";
         Swal.fire('تم الحفظ!', 'تم تحديث البيانات بنجاح', 'success');
     }
@@ -120,29 +136,24 @@
         db.collection("gas_inventory").where("distributorId", "==", auth.currentUser.uid).onSnapshot(snapshot => {
             document.getElementById('stockList').innerHTML = snapshot.docs.map(doc => {
                 const item = doc.data();
-                return `<div class="stock-item">
-                            <div><strong>${item.cylinderType}</strong><div class="price-tag">${item.price} ج.س</div><small style="color:#999; font-size:10px;">${item.lastUpdated || ''}</small></div>
-                            <div style="display:flex; align-items:center; gap:15px;">
-                                <span style="font-weight:bold; color:${item.status === 'متوفر' ? '#22c55e' : (item.status === 'قليل' ? '#f59e0b' : '#ef4444')}">${item.status}</span>
-                                <i class="fas fa-trash-alt" style="color:#c0392b; cursor:pointer;" onclick="deleteItem('${doc.id}')"></i>
-                            </div>
-                        </div>`;
+                return `<div class="stock-item"><div><strong>${item.cylinderType}</strong><div class="price-tag">${item.price} ج.س</div></div>
+                        <span style="font-weight:bold; color:${item.status === 'متوفر' ? '#22c55e' : (item.status === 'قليل' ? '#f59e0b' : '#ef4444')}">${item.status}</span>
+                        <i class="fas fa-trash-alt" style="color:#c0392b; cursor:pointer;" onclick="deleteItem('${doc.id}')"></i></div>`;
             }).join('');
         });
     }
 
     async function deleteItem(docId) {
-        const result = await Swal.fire({ title: 'هل أنت متأكد؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'نعم، احذفه' });
+        const result = await Swal.fire({ title: 'هل أنت متأكد؟', icon: 'warning', showCancelButton: true });
         if (result.isConfirmed) { await db.collection("gas_inventory").doc(docId).delete(); }
     }
 
     function logout() { auth.signOut().then(() => window.location.href = 'index.html'); }
     function shareToWhatsApp() { 
-        const shopName = document.getElementById('shopTitle').innerText;
-        const url = window.location.origin + "/Ghazik-app/view.html?id=" + auth.currentUser.uid; 
-        const text = `*مرحباً بكم في ${shopName}* ⛽%0A%0Aيمكنكم الآن متابعة أسعار الغاز المتوفرة لدينا لحظة بلحظة عبر الرابط التالي:%0A${url}%0A%0Aشكراً لتعاملكم معنا!`;
-        window.open(`https://wa.me/?text=${text}`, '_blank'); 
+        const url = window.location.origin + "/view.html?id=" + auth.currentUser.uid; 
+        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${url}`, '_blank'); 
     }
 </script>
 </body>
 </html>
+
