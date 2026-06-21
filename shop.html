@@ -14,13 +14,15 @@
         .icon-box { background: #e67e22; color: white; min-width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 15px; box-shadow: 0 4px 6px rgba(230, 126, 34, 0.3); }
         .card { background: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .btn { display: block; padding: 14px; border-radius: 12px; text-align: center; color: white; text-decoration: none; font-weight: bold; margin-bottom: 10px; font-size: 16px; }
-        h1 { margin: 0; font-size: 22px; }
+        h1 { margin: 0; font-size: 20px; }
         h3 { margin-top: 25px; }
     </style>
 </head>
 <body>
 
-<div class="container" id="shopDetails">جاري تحميل البيانات...</div>
+<div class="container" id="shopDetails">
+    <div class="card" style="text-align:center;">جاري تحميل بيانات المتجر...</div>
+</div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyD8FIOQZObnxknxSG9OzFMjaMQUBSBMNUQ", authDomain: "gastracker-41f9e.firebaseapp.com", projectId: "gastracker-41f9e", storageBucket: "gastracker-41f9e.firebasestorage.app", messagingSenderId: "921863849230", appId: "1:921863849230:web:188b5e09c18b9994e2035f" };
@@ -28,7 +30,12 @@
     const db = firebase.firestore();
     const shopId = new URLSearchParams(window.location.search).get('id');
 
+    // جلب بيانات المتجر
     db.collection("distributors").doc(shopId).get().then(doc => {
+        if (!doc.exists) {
+            document.getElementById('shopDetails').innerHTML = '<div class="card">المتجر غير موجود</div>';
+            return;
+        }
         const d = doc.data();
         let html = `
             <div class="card">
@@ -36,29 +43,33 @@
                     <div class="icon-box"><i class="fas fa-fire fa-lg"></i></div>
                     <h1>${d.shopName}</h1>
                 </div>
-                <p><i class="fas fa-map-marker-alt"></i> ${d.mapDesc}</p>
+                <p style="margin: 0 0 15px 0; color: #64748b;"><i class="fas fa-map-marker-alt"></i> ${d.mapDesc || 'لا يوجد عنوان'}</p>
                 <a href="${d.mapLink}" target="_blank" class="btn" style="background:#3b82f6;">الوصول عبر الخريطة</a>
                 <a href="https://wa.me/${d.whatsappNumber}" target="_blank" class="btn" style="background:#25d366;">طلب عبر واتساب</a>
             </div>
             <h3>المخزون المتوفر:</h3>`;
         
+        // جلب المخزون
         db.collection("gas_inventory").where("distributorId", "==", shopId).onSnapshot(snap => {
+            if (snap.empty) {
+                document.getElementById('shopDetails').innerHTML = html + '<p>لا يوجد مخزون حالياً</p>';
+                return;
+            }
+            
             const items = snap.docs.map(doc => {
                 const i = doc.data();
-                
                 const statusColors = {
                     'متوفر': { bg: '#dcfce7', text: '#166534' },
                     'قليل': { bg: '#fef3c7', text: '#92400e' },
                     'غير متوفر': { bg: '#f1f5f9', text: '#475569' }
                 };
                 const color = statusColors[i.status] || statusColors['غير متوفر'];
-                const date = i.updatedAt ? new Date(i.updatedAt.toDate()).toLocaleDateString('ar-SA') : 'منذ فترة';
 
                 return `
                     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <b style="display:block; font-size:16px;">${i.cylinderType}</b>
-                            <span style="font-size:10px; color:#94a3b8;">تحديث: ${date}</span>
+                            <span style="font-size:10px; color:#94a3b8;">تحديث: ${i.lastUpdated || 'منذ فترة'}</span>
                         </div>
                         <div style="text-align:left;">
                             <div style="color:#f97316; font-weight:bold; font-size:15px; margin-bottom:5px;">${i.price} ج.س</div>
@@ -68,9 +79,10 @@
                         </div>
                     </div>`;
             }).join('');
-            document.getElementById('shopDetails').innerHTML = html + (items || '<p>لا يوجد مخزون حالياً</p>');
+            document.getElementById('shopDetails').innerHTML = html + items;
         });
     });
 </script>
 </body>
 </html>
+
