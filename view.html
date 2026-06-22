@@ -11,23 +11,28 @@
     <link rel="manifest" href="manifest22.json">
     <meta name="theme-color" content="#f97316">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/xTYXZBgx/1782116091880.png">
-
     <style>
         body { font-family: 'Cairo', sans-serif; background: #f8fafc; margin: 0; color: #334155; }
         .hero { background: linear-gradient(135deg, #1e293b, #f97316); color: white; padding: 30px 20px; text-align: center; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; }
-        .nav-links { display: flex; justify-content: center; gap: 50px; margin-bottom: 15px; }
-        .nav-links a { color: white; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .nav-links { display: flex; justify-content: center; gap: 30px; margin-bottom: 15px; }
+        .nav-links a { color: white; text-decoration: none; font-size: 13px; font-weight: bold; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; }
         .container { max-width: 500px; margin: auto; padding: 20px; }
+        .search-box { width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-sizing: border-box; font-family: 'Cairo'; }
         
         .card { 
             background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
-            margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; 
-            justify-content: space-between; transition: 0.3s; border-right: 5px solid #22c55e;
+            margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; 
+            border-right: 5px solid #22c55e; position: relative;
         }
         .card.closed { border-right-color: #ef4444; opacity: 0.8; }
         
+        .status-badge { 
+            position: absolute; top: 10px; left: 10px; font-size: 10px; padding: 2px 8px; 
+            border-radius: 10px; font-weight: bold; 
+        }
+        
+        .rating-badge { color: #f59e0b; font-size: 12px; font-weight: bold; margin-top: 5px; }
         .store-icon { background: #fff7ed; padding: 15px; border-radius: 15px; color: #f97316; font-size: 20px; }
-        .status-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
         .footer-brand { text-align: center; padding: 30px 20px; color: #94a3b8; font-size: 13px; }
     </style>
 </head>
@@ -43,7 +48,10 @@
     <p style="margin: 0; font-size: 14px;">ريِّح بالك ، مع تطبيق غازك | غازك موجود وبسعر اليوم كمان </p>
 </div>
 
-<div class="container" id="shopsList">جاري تحميل المتاجر...</div>
+<div class="container">
+    <input type="text" id="searchInput" class="search-box" placeholder="🔍 ابحث عن اسم المتجر..." onkeyup="renderShops()">
+    <div id="shopsList">جاري تحميل المتاجر...</div>
+</div>
 
 <div class="footer-brand">
     <p>تطوير وتشغيل</p>
@@ -55,28 +63,53 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    db.collection("distributors").onSnapshot(snapshot => {
-        document.getElementById('shopsList').innerHTML = snapshot.docs.map(doc => {
-            const data = doc.data();
-            const isClosed = data.isClosed || false;
+    let allDistributors = [];
+    let allReviews = [];
+
+    db.collection("distributors").onSnapshot(snap => {
+        allDistributors = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderShops();
+    });
+
+    db.collection("reviews").onSnapshot(snap => {
+        allReviews = snap.docs.map(d => d.data());
+        renderShops();
+    });
+
+    function renderShops() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const listContainer = document.getElementById('shopsList');
+
+        const getAvg = (id) => {
+            const revs = allReviews.filter(r => r.distributorId === id);
+            return revs.length > 0 ? (revs.reduce((sum, r) => sum + r.rating, 0) / revs.length) : 0;
+        };
+
+        const filtered = allDistributors
+            .filter(d => d.shopName.toLowerCase().includes(query))
+            .sort((a, b) => getAvg(b.id) - getAvg(a.id));
+
+        listContainer.innerHTML = filtered.map(d => {
+            const isClosed = d.isClosed || false;
+            const avg = getAvg(d.id);
+            const count = allReviews.filter(r => r.distributorId === d.id).length;
             
             return `
-            <div class="card ${isClosed ? 'closed' : ''}" onclick="window.location.href='shop.html?id=${doc.id}'">
+            <div class="card ${isClosed ? 'closed' : ''}" onclick="window.location.href='shop.html?id=${d.id}'">
+                <span class="status-badge" style="background:${isClosed ? '#fee2e2' : '#dcfce7'}; color:${isClosed ? '#ef4444' : '#16a34a'}">
+                    ${isClosed ? 'مغلق' : 'مفتوح'}
+                </span>
                 <div>
-                    <h3 style="margin:0;">${data.shopName} 
-                        <span class="status-badge" style="background:${isClosed ? '#fee2e2' : '#dcfce7'}; color:${isClosed ? '#ef4444' : '#16a34a'}">
-                            ${isClosed ? 'مغلق' : 'مفتوح'}
-                        </span>
-                    </h3>
-                    <p style="font-size:13px; color:#64748b; margin:5px 0 0;"><i class="fas fa-map-marker-alt"></i> ${data.mapDesc || 'لا يوجد عنوان'}</p>
+                    <h3 style="margin:0;">${d.shopName}</h3>
+                    <p style="font-size:13px; color:#64748b; margin:5px 0 0;"><i class="fas fa-map-marker-alt"></i> ${d.mapDesc || 'لا يوجد عنوان'}</p>
+                    <div class="rating-badge">${avg > 0 ? `<i class="fas fa-star"></i> ${avg.toFixed(1)} (${count})` : 'لا يوجد تقييمات'}</div>
                 </div>
-                <div class="store-icon">
-                    <i class="fas fa-store"></i>
-                </div>
-            </div>
-        `}).join('');
-    });
+                <div class="store-icon"><i class="fas fa-store"></i></div>
+            </div>`;
+        }).join('');
+    }
 </script>
 </body>
 </html>
+
 
