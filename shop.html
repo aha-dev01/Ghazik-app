@@ -12,21 +12,29 @@
     <meta name="theme-color" content="#f97316">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/xTYXZBgx/1782116091880.png">
     <style>
-        body { font-family: 'Cairo', sans-serif; background: #f8fafc; padding: 20px; color: #334155; }
+        body { font-family: 'Cairo', sans-serif; background: #f8fafc; padding: 10px; color: #334155; -webkit-font-smoothing: antialiased; }
         .container { max-width: 500px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .btn { display: block; padding: 14px; border-radius: 12px; text-align: center; color: white; text-decoration: none; font-weight: bold; margin-bottom: 10px; font-size: 16px; transition: 0.3s; }
-        .btn:hover { opacity: 0.9; }
-        h1 { margin: 0; font-size: 20px; }
-        h3 { margin-top: 25px; }
-        /* تنسيق الصورة الدائرية */
-        .shop-logo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 4px solid #e67e22; box-shadow: 0 4px 10px rgba(230, 126, 34, 0.2); margin-bottom: 10px; }
+        .header-bar { display: flex; align-items: center; margin-bottom: 10px; }
+        .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #ffffff; padding: 6px 14px; border-radius: 50px; color: #475569; text-decoration: none; font-size: 0.85rem; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .card { background: white; padding: 15px; border-radius: 18px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+        .shop-logo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #e67e22; margin-bottom: 5px; }
+        h1 { font-size: 1.25rem; font-weight: 900; margin: 5px 0; }
+        .btn { display: block; padding: 8px; border-radius: 10px; text-align: center; color: white; text-decoration: none; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
+        #stars { display: flex; justify-content: center; gap: 5px; margin: 10px 0; }
+        #stars i { cursor: pointer; color: #cbd5e1; font-size: 28px; transition: 0.2s; }
+        #stars i.active { color: #f59e0b; }
+        .inventory-grid { display: grid; gap: 8px; }
+        .item-card { background: white; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+        .status-pill { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+        .price-text { font-weight: 900; font-size: 1.1rem; color: #f97316; }
+        .update-time { font-size: 0.65rem; color: #94a3b8; display: block; margin-top: 2px; }
     </style>
 </head>
 <body>
 
 <div class="container" id="shopDetails">
-    <div class="card" style="text-align:center;">جاري تحميل بيانات المتجر...</div>
+    <div class="header-bar"><a href="index.html" class="back-btn"><i class="fas fa-arrow-right"></i> رجوع</a></div>
+    <div class="card" style="text-align:center;">جاري تحميل البيانات...</div>
 </div>
 
 <script>
@@ -34,61 +42,67 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const shopId = new URLSearchParams(window.location.search).get('id');
+    let deviceId = localStorage.getItem('gastracker_device_id') || ('dev_' + Math.random().toString(36).substr(2, 9));
+    localStorage.setItem('gastracker_device_id', deviceId);
+
+    function formatDateTime(val) { return val ? val : "غير متوفر"; }
 
     db.collection("distributors").doc(shopId).get().then(doc => {
-        if (!doc.exists) {
-            document.getElementById('shopDetails').innerHTML = '<div class="card">المتجر غير موجود</div>';
-            return;
-        }
+        if (!doc.exists) return;
         const d = doc.data();
-        
-        // عرض الصورة إذا كانت موجودة، وإلا عرض الأيقونة الافتراضية
-        const logoElement = d.shopLogo 
-            ? `<img src="${d.shopLogo}" class="shop-logo">` 
-            : `<div style="background:#e67e22; color:white; width:90px; height:90px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto 10px auto; font-size:30px;"><i class="fas fa-fire"></i></div>`;
+        const logo = d.shopLogo ? `<img src="${d.shopLogo}" class="shop-logo">` : `<div style="background:#e67e22; color:white; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto 5px auto; font-size:20px;"><i class="fas fa-fire"></i></div>`;
 
-        let html = `
+        document.getElementById('shopDetails').innerHTML = `
+            <div class="header-bar"><a href="view.html" class="back-btn"><i class="fas fa-arrow-right"></i> رجوع</a></div>
             <div class="card" style="text-align:center;">
-                ${logoElement}
+                ${logo}
                 <h1>${d.shopName}</h1>
-                <p style="margin: 10px 0; color: #64748b;"><i class="fas fa-map-marker-alt"></i> ${d.mapDesc || 'لا يوجد عنوان'}</p>
-                <div style="display:grid; gap:10px;">
-                    <a href="${d.mapLink}" target="_blank" class="btn" style="background:#3b82f6;">الوصول عبر الخريطة</a>
-                    <a href="https://wa.me/${d.whatsappNumber}" target="_blank" class="btn" style="background:#25d366;">طلب عبر واتساب</a>
+                <div id="ratingStats" style="font-size: 0.85rem; font-weight: 700; color: #64748b;">جاري التحميل...</div>
+                <div id="stars">${[1,2,3,4,5].map(n => `<i class="fas fa-star" data-value="${n}"></i>`).join('')}</div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <a href="${d.mapLink}" target="_blank" class="btn" style="background:#3b82f6; flex:1;">الخريطة</a>
+                    <a href="https://wa.me/${d.whatsappNumber}" target="_blank" class="btn" style="background:#25d366; flex:1;">واتساب</a>
                 </div>
             </div>
-            <h3>المخزون المتوفر:</h3>`;
-        
-        db.collection("gas_inventory").where("distributorId", "==", shopId).onSnapshot(snap => {
-            if (snap.empty) {
-                document.getElementById('shopDetails').innerHTML = html + '<p>لا يوجد مخزون حالياً</p>';
-                return;
-            }
-            
-            const items = snap.docs.map(doc => {
-                const i = doc.data();
-                const statusColors = {
-                    'متوفر': { bg: '#dcfce7', text: '#166534' },
-                    'قليل': { bg: '#fef3c7', text: '#92400e' },
-                    'غير متوفر': { bg: '#f1f5f9', text: '#475569' }
-                };
-                const color = statusColors[i.status] || statusColors['غير متوفر'];
+            <h3>المخزون المتوفر:</h3>
+            <div id="inventory" class="inventory-grid"></div>`;
 
-                return `
-                    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <b style="display:block; font-size:16px;">${i.cylinderType}</b>
-                            <span style="font-size:10px; color:#94a3b8;">تحديث: ${i.lastUpdated || 'منذ فترة'}</span>
-                        </div>
-                        <div style="text-align:left;">
-                            <div style="color:#f97316; font-weight:bold; font-size:15px; margin-bottom:5px;">${i.price} ج.س</div>
-                            <span style="font-size:11px; background:${color.bg}; color:${color.text}; padding:4px 10px; border-radius:10px; font-weight:bold;">
-                                ${i.status}
-                            </span>
-                        </div>
+        const stars = document.querySelectorAll('#stars i');
+        const updateUI = (val) => stars.forEach((s, i) => s.className = i < val ? 'fas fa-star active' : 'fas fa-star');
+        db.collection("reviews").doc(`${shopId}_${deviceId}`).get().then(r => { if(r.exists) updateUI(r.data().rating); });
+        
+        stars.forEach(s => s.onclick = () => {
+            const val = parseInt(s.getAttribute('data-value'));
+            updateUI(val);
+            db.collection("reviews").doc(`${shopId}_${deviceId}`).set({ distributorId: shopId, rating: val, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+                const statusEl = document.getElementById('ratingStats');
+                const originalText = statusEl.innerHTML;
+                statusEl.innerHTML = "شكراً لتقييمك! ❤️";
+                setTimeout(() => { statusEl.innerHTML = originalText; }, 3000); // تمديد لـ 3 ثواني
+            });
+        });
+
+        db.collection("reviews").where("distributorId", "==", shopId).onSnapshot(snap => {
+            let total = 0; snap.forEach(doc => total += doc.data().rating);
+            const avg = snap.size > 0 ? (total / snap.size).toFixed(1) : 0;
+            const el = document.getElementById('ratingStats');
+            if(el) el.innerHTML = `${avg} <i class="fas fa-star" style="color:#f59e0b"></i>`; // المتوسط فقط
+        });
+
+        db.collection("gas_inventory").where("distributorId", "==", shopId).onSnapshot(snap => {
+            const statusColors = { 'متوفر': { bg: '#dcfce7', text: '#166534' }, 'قليل': { bg: '#ffedd5', text: '#9a3412' }, 'غير متوفر': { bg: '#f1f5f9', text: '#475569' } };
+            const invContainer = document.getElementById('inventory');
+            if(!invContainer) return;
+            invContainer.innerHTML = snap.empty ? `<div class="card" style="text-align:center; color:#64748b;">لا يوجد مخزون حالياً</div>` :
+                snap.docs.map(doc => {
+                    const i = doc.data(); 
+                    const s = statusColors[i.status] || statusColors['غير متوفر'];
+                    return `<div class="item-card">
+                        <div><b>${i.cylinderType}</b><br><span class="status-pill" style="background:${s.bg}; color:${s.text};">${i.status}</span>
+                        <span class="update-time">مُحدث: ${formatDateTime(i.lastUpdated)}</span></div>
+                        <div class="price-text">${i.price} ج.س</div>
                     </div>`;
-            }).join('');
-            document.getElementById('shopDetails').innerHTML = html + items;
+                }).join('');
         });
     });
 </script>
