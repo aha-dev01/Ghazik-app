@@ -8,10 +8,12 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f97316">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/JhNMNF8Y/1782113129362.png">
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
     <style>
         body { background: #eef2f7; font-family: 'Segoe UI', sans-serif; padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 20px; max-width: 500px; margin: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
@@ -30,7 +32,7 @@
         
         <div class="input-group">
             <label>اسم المتجر</label>
-            <input type="text" id="shopName" placeholder="اسم المحل التجاري">
+            <input type="text" id="name" placeholder="اسم المحل التجاري">
         </div>
 
         <div class="input-group">
@@ -66,7 +68,7 @@
                 db.collection("distributors").doc(user.uid).get().then(doc => {
                     if (doc.exists) {
                         const data = doc.data();
-                        document.getElementById('shopName').value = data.shopName || '';
+                        document.getElementById('name').value = data.name || '';
                         document.getElementById('whatsappNumber').value = data.whatsappNumber || '';
                         document.getElementById('mapLink').value = data.mapLink || '';
                         document.getElementById('mapDesc').value = data.mapDesc || '';
@@ -83,7 +85,7 @@
             
             try {
                 await db.collection("distributors").doc(user.uid).set({
-                    shopName: document.getElementById('shopName').value,
+                    name: document.getElementById('name').value,
                     whatsappNumber: document.getElementById('whatsappNumber').value,
                     mapLink: document.getElementById('mapLink').value,
                     mapDesc: document.getElementById('mapDesc').value
@@ -99,4 +101,3 @@
     </script>
 </body>
 </html>
-
