@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>غازك | المنصة السودانية للغاز</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="manifest" href="manifest22.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f97316">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/xTYXZBgx/1782116091880.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/JhNMNF8Y/1782113129362.png">
+    
     <style>
         body { font-family: 'Cairo', sans-serif; background: #f8fafc; margin: 0; color: #334155; }
         .hero { background: linear-gradient(135deg, #1e293b, #f97316); color: white; padding: 30px 20px; text-align: center; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; }
@@ -18,19 +20,9 @@
         .nav-links a { color: white; text-decoration: none; font-size: 13px; font-weight: bold; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; }
         .container { max-width: 500px; margin: auto; padding: 20px; }
         .search-box { width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-sizing: border-box; font-family: 'Cairo'; }
-        
-        .card { 
-            background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
-            margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; 
-            border-right: 5px solid #22c55e; position: relative;
-        }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-right: 5px solid #22c55e; position: relative; }
         .card.closed { border-right-color: #ef4444; opacity: 0.8; }
-        
-        .status-badge { 
-            position: absolute; top: 10px; left: 10px; font-size: 10px; padding: 2px 8px; 
-            border-radius: 10px; font-weight: bold; 
-        }
-        
+        .status-badge { position: absolute; top: 10px; left: 10px; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
         .rating-badge { color: #f59e0b; font-size: 12px; font-weight: bold; margin-top: 5px; }
         .store-icon { background: #fff7ed; padding: 15px; border-radius: 15px; color: #f97316; font-size: 20px; }
         .footer-brand { text-align: center; padding: 30px 20px; color: #94a3b8; font-size: 13px; }
@@ -42,10 +34,11 @@
     <div class="nav-links">
         <a href="about1.html"><i class="fas fa-info-circle"></i> حول التطبيق</a>
         <a href="contact1.html"><i class="fas fa-headset"></i> اتصل بنا</a>
+        <a href="#" onclick="firebase.auth().signOut()"><i class="fas fa-sign-out-alt"></i> خروج</a>
     </div>
     <i class="fas fa-fire fa-3x" style="color: white; margin-top: 10px;"></i>
     <h1 style="margin: 15px 0 5px;">غازك</h1>
-    <p style="margin: 0; font-size: 14px;">ريِّح بالك ، مع تطبيق غازك | غازك موجود وبسعر اليوم كمان </p>
+    <p style="margin: 0; font-size: 14px;">ريِّح بالك مع غازك | غازك موجود وبسعر اليوم كمان</p>
 </div>
 
 <div class="container">
@@ -61,57 +54,50 @@
 <script>
     const firebaseConfig = { apiKey: "AIzaSyD8FIOQZObnxknxSG9OzFMjaMQUBSBMNUQ", authDomain: "gastracker-41f9e.firebaseapp.com", projectId: "gastracker-41f9e", storageBucket: "gastracker-41f9e.firebasestorage.app", messagingSenderId: "921863849230", appId: "1:921863849230:web:188b5e09c18b9994e2035f" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.firestore();
 
     let allDistributors = [];
     let allReviews = [];
-    let allInventory = []; // مصفوفة جديدة لتخزين المخزون
+    let allInventory = [];
 
-    db.collection("distributors").onSnapshot(snap => {
-        allDistributors = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderShops();
+    // التحقق من الهوية وإضافة زر لوحة التحكم للتاجر
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) { window.location.href = 'login.html'; return; }
+        
+        // التحقق إذا كان المستخدم تاجراً لإضافة زر الوصول للوحة التحكم
+        const merchantDoc = await db.collection("distributors").doc(user.uid).get();
+        if (merchantDoc.exists) {
+            const btn = document.createElement('div');
+            btn.innerHTML = `<div style="position:fixed; bottom:20px; left:20px; z-index:999;">
+                <a href="dashboard.html" style="background:#1e293b; color:white; padding:12px 20px; border-radius:30px; text-decoration:none; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+                    <i class="fas fa-store"></i> لوحة التحكم
+                </a>
+            </div>`;
+            document.body.appendChild(btn);
+        }
     });
 
-    db.collection("reviews").onSnapshot(snap => {
-        allReviews = snap.docs.map(d => d.data());
-        renderShops();
-    });
-
-    db.collection("gas_inventory").onSnapshot(snap => {
-        allInventory = snap.docs.map(d => d.data());
-        renderShops();
-    });
+    db.collection("distributors").onSnapshot(snap => { allDistributors = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderShops(); });
+    db.collection("reviews").onSnapshot(snap => { allReviews = snap.docs.map(d => d.data()); renderShops(); });
+    db.collection("gas_inventory").onSnapshot(snap => { allInventory = snap.docs.map(d => d.data()); renderShops(); });
 
     function renderShops() {
         const query = document.getElementById('searchInput').value.toLowerCase();
         const listContainer = document.getElementById('shopsList');
 
-        const getAvg = (id) => {
-            const revs = allReviews.filter(r => r.distributorId === id);
-            return revs.length > 0 ? (revs.reduce((sum, r) => sum + r.rating, 0) / revs.length) : 0;
-        };
-
-        const filtered = allDistributors
-            .filter(d => d.shopName.toLowerCase().includes(query))
+        const filtered = allDistributors.filter(d => (d.name || "").toLowerCase().includes(query))
             .sort((a, b) => {
-                // 1. المتاجر المفتوحة أولاً
                 if (a.isClosed !== b.isClosed) return a.isClosed ? 1 : -1;
-
-                // 2. المتاجر التي لديها مخزون "متوفر" أولاً
-                const hasStockA = allInventory.some(i => i.distributorId === a.id && i.status === 'متوفر');
-                const hasStockB = allInventory.some(i => i.distributorId === b.id && i.status === 'متوفر');
-                if (hasStockA !== hasStockB) return hasStockA ? -1 : 1;
-
-                // 3. الترتيب حسب الأحدث تحديثاً
-                const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-                const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-                return timeB - timeA;
+                const stockA = allInventory.some(i => i.distributorId === a.id && i.status === 'متوفر');
+                const stockB = allInventory.some(i => i.distributorId === b.id && i.status === 'متوفر');
+                return stockB - stockA;
             });
 
         listContainer.innerHTML = filtered.map(d => {
             const isClosed = d.isClosed || false;
-            const avg = getAvg(d.id);
-            const count = allReviews.filter(r => r.distributorId === d.id).length;
+            const revs = allReviews.filter(r => r.distributorId === d.id);
+            const avg = revs.length > 0 ? (revs.reduce((sum, r) => sum + r.rating, 0) / revs.length) : 0;
             
             return `
             <div class="card ${isClosed ? 'closed' : ''}" onclick="window.location.href='shop.html?id=${d.id}'">
@@ -119,9 +105,9 @@
                     ${isClosed ? 'مغلق' : 'مفتوح'}
                 </span>
                 <div>
-                    <h3 style="margin:0;">${d.shopName}</h3>
+                    <h3 style="margin:0;">${d.name || 'متجر غير مسمى'}</h3>
                     <p style="font-size:13px; color:#64748b; margin:5px 0 0;"><i class="fas fa-map-marker-alt"></i> ${d.mapDesc || 'لا يوجد عنوان'}</p>
-                    <div class="rating-badge">${avg > 0 ? `<i class="fas fa-star"></i> ${avg.toFixed(1)} (${count})` : 'لا يوجد تقييمات'}</div>
+                    <div class="rating-badge">${avg > 0 ? `<i class="fas fa-star"></i> ${avg.toFixed(1)} (${revs.length})` : 'لا يوجد تقييمات'}</div>
                 </div>
                 <div class="store-icon"><i class="fas fa-store"></i></div>
             </div>`;
