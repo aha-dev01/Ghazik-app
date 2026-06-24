@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم - Sawa Digital Solutions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f97316">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/JhNMNF8Y/1782113129362.png">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -31,7 +28,6 @@
         input[type="number"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
         .btn-add { width: 100%; padding: 12px; background: #34495e; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
         .btn-share { width: 100%; padding: 12px; background: #22c55e; color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        /* تحسينات المخزون */
         .stock-item { background: #fff; padding: 16px; border-radius: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #e2e8f0; }
         .type-badge { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-left: 8px; }
         .status-badge { font-weight: bold; font-size: 11px; padding: 4px 10px; border-radius: 20px; }
@@ -94,7 +90,6 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(); const db = firebase.firestore();
 
-    // دالة الألوان
     function getTypeColor(type) {
         const colors = { "غاز أمان": "#e74c3c", "غاز الوطنية": "#3498db", "غاز النيل": "#2ecc71", "غاز أبرسي": "#f1c40f", "غاز إيران": "#9b59b6", "غاز قادرة": "#e67e22", "غاز سوداغاز": "#34495e" };
         return colors[type] || "#95a5a6";
@@ -127,15 +122,20 @@
         const type = document.querySelector('input[name="gasType"]:checked').value;
         const priceInput = document.getElementById('gasPrice').value;
         const status = document.querySelector('input[name="gasStatus"]:checked').value;
-        const now = new Date().toLocaleDateString('ar-EG');
+        const now = new Date().toISOString(); // استخدام التنسيق الزمني للترتيب
+        
         if (!priceInput) return Swal.fire('تنبيه', 'الرجاء إدخال السعر', 'warning');
         
+        // 1. تحديث المخزون
         const q = await db.collection("gas_inventory").where("distributorId", "==", auth.currentUser.uid).where("cylinderType", "==", type).get();
         if (!q.empty) { await q.docs[0].ref.update({ price: parseInt(priceInput), status: status, lastUpdated: now }); }
         else { await db.collection("gas_inventory").add({ distributorId: auth.currentUser.uid, cylinderType: type, price: parseInt(priceInput), status: status, lastUpdated: now }); }
         
+        // 2. تحديث وقت التعديل في بيانات المتجر الرئيسية للترتيب
+        await db.collection("distributors").doc(auth.currentUser.uid).update({ updatedAt: now });
+        
         document.getElementById('gasPrice').value = "";
-        Swal.fire('تم الحفظ!', 'تم تحديث البيانات بنجاح', 'success');
+        Swal.fire('تم الحفظ!', 'تم تحديث البيانات وترتيب المتجر بنجاح', 'success');
     }
 
     function loadStock() {
@@ -145,7 +145,6 @@
                 const color = getTypeColor(item.cylinderType);
                 const statusColor = item.status === 'متوفر' ? '#dcfce7' : (item.status === 'قليل' ? '#fef3c7' : '#fee2e2');
                 const statusText = item.status === 'متوفر' ? '#166534' : (item.status === 'قليل' ? '#92400e' : '#991b1b');
-                
                 return `<div class="stock-item">
                     <div style="display:flex; align-items:center;">
                         <span class="type-badge" style="background:${color}"></span>
@@ -167,11 +166,8 @@
 
     function logout() { auth.signOut().then(() => window.location.href = 'index.html'); }
     function shareToWhatsApp() { 
-        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: 
-        ${window.location.origin}/Ghazik-app/view.html?id=${auth.currentUser.uid}`, '_blank'); 
+        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${window.location.origin}/view.html?id=${auth.currentUser.uid}`, '_blank'); 
     }
 </script>
 </body>
 </html>
-
-
