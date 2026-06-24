@@ -8,9 +8,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="manifest" href="manifest22.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f97316">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/xTYXZBgx/1782116091880.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/JhNMNF8Y/1782113129362.png">
+    
     <style>
         body { font-family: 'Cairo', sans-serif; background: #f8fafc; padding: 10px; color: #334155; -webkit-font-smoothing: antialiased; }
         .container { max-width: 500px; margin: auto; }
@@ -33,7 +34,7 @@
 <body>
 
 <div class="container" id="shopDetails">
-    <div class="header-bar"><a href="index.html" class="back-btn"><i class="fas fa-arrow-right"></i> رجوع</a></div>
+    <div class="header-bar"><a href="view.html" class="back-btn"><i class="fas fa-arrow-right"></i> رجوع</a></div>
     <div class="card" style="text-align:center;">جاري تحميل البيانات...</div>
 </div>
 
@@ -45,7 +46,12 @@
     let deviceId = localStorage.getItem('gastracker_device_id') || ('dev_' + Math.random().toString(36).substr(2, 9));
     localStorage.setItem('gastracker_device_id', deviceId);
 
-    function formatDateTime(val) { return val ? val : "غير متوفر"; }
+    // دالة تنسيق التاريخ: تأخذ السلسلة النصية وتستخرج جزء التاريخ فقط (يوم/شهر/سنة)
+    function formatDateTime(val) { 
+        if (!val) return "غير متوفر";
+        // إذا كان التاريخ بتنسيق معين (مثلاً "24T21:53...") نقوم بأخذ أول جزء
+        return val.split('T')[0]; 
+    }
 
     db.collection("distributors").doc(shopId).get().then(doc => {
         if (!doc.exists) return;
@@ -56,7 +62,7 @@
             <div class="header-bar"><a href="view.html" class="back-btn"><i class="fas fa-arrow-right"></i> رجوع</a></div>
             <div class="card" style="text-align:center;">
                 ${logo}
-                <h1>${d.shopName}</h1>
+                <h1>${d.name}</h1>
                 <div id="ratingStats" style="font-size: 0.85rem; font-weight: 700; color: #64748b;">جاري التحميل...</div>
                 <div id="stars">${[1,2,3,4,5].map(n => `<i class="fas fa-star" data-value="${n}"></i>`).join('')}</div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
@@ -76,9 +82,8 @@
             updateUI(val);
             db.collection("reviews").doc(`${shopId}_${deviceId}`).set({ distributorId: shopId, rating: val, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
                 const statusEl = document.getElementById('ratingStats');
-                const originalText = statusEl.innerHTML;
                 statusEl.innerHTML = "شكراً لتقييمك! ❤️";
-                setTimeout(() => { statusEl.innerHTML = originalText; }, 3000); // تمديد لـ 3 ثواني
+                setTimeout(() => { location.reload(); }, 2000);
             });
         });
 
@@ -86,7 +91,7 @@
             let total = 0; snap.forEach(doc => total += doc.data().rating);
             const avg = snap.size > 0 ? (total / snap.size).toFixed(1) : 0;
             const el = document.getElementById('ratingStats');
-            if(el) el.innerHTML = `${avg} <i class="fas fa-star" style="color:#f59e0b"></i>`; // المتوسط فقط
+            if(el) el.innerHTML = `${avg} <i class="fas fa-star" style="color:#f59e0b"></i>`;
         });
 
         db.collection("gas_inventory").where("distributorId", "==", shopId).onSnapshot(snap => {
@@ -99,7 +104,7 @@
                     const s = statusColors[i.status] || statusColors['غير متوفر'];
                     return `<div class="item-card">
                         <div><b>${i.cylinderType}</b><br><span class="status-pill" style="background:${s.bg}; color:${s.text};">${i.status}</span>
-                        <span class="update-time">مُحدث: ${formatDateTime(i.lastUpdated)}</span></div>
+                        <span class="update-time">تاريخ التحديث: ${formatDateTime(i.lastUpdated)}</span></div>
                         <div class="price-text">${i.price} ج.س</div>
                     </div>`;
                 }).join('');
