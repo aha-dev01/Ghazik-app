@@ -3,133 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل دخول الموزعين</title>
+    <title>تسجيل دخول | غازك</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f97316">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/JhNMNF8Y/1782113129362.png">
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --brand-color: #f39c12; --button-color: #34495e; --red-color: #c0392b; --bg-color: #eef2f7; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 25px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .lock-icon { font-size: 50px; color: var(--brand-color); margin-bottom: 20px; }
-        .input-group { position: relative; margin: 20px 0; }
-        .input-group input { width: 100%; padding: 15px; padding-right: 45px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 12px; outline: none; transition: 0.3s; }
-        .input-group input:focus { border-color: var(--brand-color); }
-        .input-group i { position: absolute; right: 15px; top: 17px; color: var(--brand-color); }
-        button { width: 100%; padding: 15px; background: var(--button-color); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
-        button:hover:not(:disabled) { background: #2c3e50; }
-        button:disabled { background: #95a5a6; cursor: not-allowed; }
-        .footer-text { margin-top: 30px; font-size: 12px; color: #f39c12; font-weight: bold; }
-        .signup-link { color: var(--red-color); font-weight: bold; text-decoration: none; }
+        :root { --primary: #f97316; --secondary: #1e293b; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #d9e2ec 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: white; padding: 40px; border-radius: 35px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); width: 100%; max-width: 400px; text-align: center; }
         
-        #customAlert { display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#c0392b; color:white; padding:15px 25px; border-radius:10px; z-index:1000; box-shadow:0 5px 15px rgba(0,0,0,0.2); font-weight: bold; }
+        .input-group { position: relative; margin-bottom: 18px; }
+        input { width: 100%; padding: 16px 50px 16px 20px; border: 2px solid #e2e8f0; border-radius: 16px; box-sizing: border-box; font-size: 15px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1); }
+        .field-icon { position: absolute; right: 20px; top: 18px; color: #94a3b8; }
+        
+        button { width: 100%; padding: 16px; background: var(--secondary); color: white; border: none; border-radius: 16px; font-size: 17px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #334155; }
+        
+        .footer-text { margin-top: 30px; font-size: 12px; color: #94a3b8; font-weight: 600; }
+        .custom-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #c0392b; color: white; padding: 15px 25px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="customAlert">
-        <span id="alertMessage"></span>
+<div id="customAlert" class="custom-alert"></div>
+
+<div class="card">
+    <div style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"><i class="fas fa-sign-in-alt"></i></div>
+    <h2 style="color: var(--secondary); margin-bottom: 25px;">تسجيل الدخول</h2>
+
+    <div class="input-group">
+        <i class="fas fa-envelope field-icon"></i>
+        <input type="email" id="email" placeholder="البريد الإلكتروني">
+    </div>
+    <div class="input-group">
+        <i class="fas fa-lock field-icon"></i>
+        <input type="password" id="password" placeholder="كلمة المرور">
     </div>
 
-    <div class="card">
-        <div class="lock-icon"><i class="fas fa-lock"></i></div>
-        <h2>تسجيل الدخول</h2>
-        
-        <div class="input-group">
-            <i class="fas fa-envelope"></i>
-            <input type="email" id="email" placeholder="البريد الإلكتروني">
-        </div>
-        
-        <div class="input-group">
-            <i class="fas fa-eye" id="togglePass" style="cursor:pointer;" onclick="togglePassword()"></i>
-            <input type="password" id="password" placeholder="كلمة المرور">
-        </div>
-
-        <div style="text-align: left; margin-top: -10px; margin-bottom: 20px;">
-            <a href="#" onclick="resetPassword()" style="color: #34495e; font-size: 13px; text-decoration: none; font-weight: 600;">
-                هل نسيت كلمة المرور؟
-            </a>
-        </div>
-
-        <button id="loginBtn" onclick="login()">دخول</button>
-        
-        <div style="margin-top: 20px; font-size: 14px;">
-            <p>ليس لديك حساب؟ <a href="regist.html" class="signup-link">سجل الآن</a></p>
-        </div>
-        
-        <div class="footer-text">سوا للحلول الرقمية | Sawa Digital Solutions</div>
+    <div style="text-align: left; margin-bottom: 20px;">
+        <a href="#" onclick="resetPassword()" style="color: #64748b; font-size: 13px; font-weight: bold; text-decoration: none;">هل نسيت كلمة المرور؟</a>
     </div>
 
-    <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyD8FIOQZObnxknxSG9OzFMjaMQUBSBMNUQ",
-          authDomain: "gastracker-41f9e.firebaseapp.com",
-          projectId: "gastracker-41f9e",
-          storageBucket: "gastracker-41f9e.firebasestorage.app",
-          messagingSenderId: "921863849230",
-          appId: "1:921863849230:web:188b5e09c18b9994e2035f"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
+    <button id="loginBtn" onclick="login()">دخول</button>
 
-        function togglePassword() {
-            const pass = document.getElementById('password');
-            const icon = document.getElementById('togglePass');
-            if (pass.type === "password") { pass.type = "text"; icon.className = "fas fa-eye-slash"; }
-            else { pass.type = "password"; icon.className = "fas fa-eye"; }
-        }
+    <div style="margin-top: 20px; font-size: 14px; color: #64748b;">
+        ليس لديك حساب؟ <a href="regist.html" style="color: var(--primary); font-weight: bold; text-decoration: none;">سجل الآن</a>
+    </div>
+    
+    <div class="footer-text">سوا للحلول الرقمية | Sawa Digital Solutions</div>
+</div>
 
-        function showMessage(msg) {
-            const alertBox = document.getElementById('customAlert');
-            document.getElementById('alertMessage').innerText = msg;
-            alertBox.style.display = 'block';
-            setTimeout(() => { alertBox.style.display = 'none'; }, 4000);
-        }
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyD8FIOQZObnxknxSG9OzFMjaMQUBSBMNUQ", authDomain: "gastracker-41f9e.firebaseapp.com", projectId: "gastracker-41f9e", storageBucket: "gastracker-41f9e.firebasestorage.app", messagingSenderId: "921863849230", appId: "1:921863849230:web:188b5e09c18b9994e2035f" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-        // دالة استعادة كلمة المرور
-        function resetPassword() {
-            const email = document.getElementById('email').value.trim();
-            if (!email) {
-                showMessage("⚠️ يرجى إدخال البريد الإلكتروني أولاً");
-                return;
+    function showMessage(msg, color = "#c0392b") {
+        const alertBox = document.getElementById('customAlert');
+        alertBox.innerText = msg;
+        alertBox.style.backgroundColor = color;
+        alertBox.style.display = 'block';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 4000);
+    }
+
+    async function login() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const btn = document.getElementById('loginBtn');
+
+        if (!email || !password) return showMessage("⚠️ يرجى ملء جميع الحقول");
+
+        btn.disabled = true;
+        btn.innerText = "جاري التحقق...";
+
+        try {
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            // جلب بيانات المستخدم للتحقق من الدور
+            const userDoc = await db.collection("distributors").doc(userCredential.user.uid).get();
+            
+            if (userDoc.exists) {
+                const role = userDoc.data().role;
+                if (role === 'merchant') {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    window.location.href = 'view.html';
+                }
+            } else {
+                throw new Error("بيانات المستخدم غير موجودة");
             }
-            auth.sendPasswordResetEmail(email)
-                .then(() => showMessage("✅ تم إرسال رابط استعادة كلمة المرور لبريدك"))
-                .catch(error => showMessage("❌ خطأ: " + error.message));
+        } catch (error) {
+            btn.disabled = false;
+            btn.innerText = "دخول";
+            showMessage("❌ خطأ: " + error.message);
         }
+    }
 
-        function login() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('loginBtn');
-
-            if (!email || !password) {
-                showMessage("⚠️ يرجى تعبئة الحقول المطلوبة");
-                return;
-            }
-
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الدخول...';
-            btn.disabled = true;
-
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => { window.location.href = 'dashboard.html'; })
-                .catch(error => {
-                    btn.innerHTML = 'دخول';
-                    btn.disabled = false;
-                    let message = "خطأ في تسجيل الدخول";
-                    if (error.code === 'auth/user-not-found') message = "⚠️ البريد غير مسجل.";
-                    else if (error.code === 'auth/wrong-password') message = "⚠️ كلمة المرور خاطئة.";
-                    showMessage("❌ " + message);
-                });
-        }
-    </script>
+    function resetPassword() {
+        const email = document.getElementById('email').value.trim();
+        if (!email) return showMessage("⚠️ أدخل البريد الإلكتروني أولاً");
+        auth.sendPasswordResetEmail(email)
+            .then(() => showMessage("✅ تم إرسال رابط الاستعادة للبريد", "#27ae60"))
+            .catch(err => showMessage("❌ خطأ: " + err.message));
+    }
+</script>
 </body>
 </html>
