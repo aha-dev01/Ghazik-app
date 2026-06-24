@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ghazik</title>
+    <title>Ghazak | غازك</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f97316">
@@ -12,25 +12,29 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <style>
-        body { background: linear-gradient(135deg, #f0f2f5 0%, #d9e2ec 100%); font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 30px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
-        .logo { font-size: 60px; color: #e67e22; margin-bottom: 20px; }
-        h1 { color: #1a1a2e; margin-bottom: 10px; }
-        p { color: #777; margin-bottom: 30px; }
-        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; font-weight: bold; text-decoration: none; transition: 0.3s; box-sizing: border-box; }
-        .btn-login { background: #1a1a2e; color: white; }
-        .btn-login:hover { background: #252545; }
-        .btn-reg { background: transparent; color: #1a1a2e; border: 2px solid #1a1a2e; }
-        .btn-reg:hover { background: #1a1a2e; color: white; }
-        .footer-text { margin-top: 30px; font-size: 12px; color: #e67e22; }
+        :root { --primary: #f97316; --secondary: #1e293b; --bg: #f1f5f9; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: white; padding: 45px; border-radius: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); width: 100%; max-width: 400px; text-align: center; }
+        
+        .icon-box { font-size: 60px; color: var(--primary); margin-bottom: 25px; }
+        h1 { color: var(--secondary); margin-bottom: 15px; font-size: 28px; }
+        p { color: #64748b; margin-bottom: 35px; line-height: 1.6; font-size: 16px; }
+        
+        .btn { display: block; width: 100%; padding: 16px; margin: 12px 0; border-radius: 16px; font-weight: bold; text-decoration: none; transition: all 0.3s ease; box-sizing: border-box; font-size: 16px; }
+        .btn-login { background: var(--secondary); color: white; }
+        .btn-login:hover { background: #334155; transform: translateY(-2px); }
+        .btn-reg { background: transparent; color: var(--secondary); border: 2px solid var(--secondary); }
+        .btn-reg:hover { background: var(--secondary); color: white; transform: translateY(-2px); }
+        
+        .footer-text { margin-top: 40px; font-size: 12px; color: #94a3b8; font-weight: 600; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <div class="logo"><i class="fas fa-fire"></i></div>
-    <h1>مرحباً بك</h1>
-    <p>تطبيق إدارة نقاط توزيع غاز الطبخ</p>
+    <div class="icon-box"><i class="fas fa-fire-alt"></i></div>
+    <h1>مرحباً بك في غازك</h1>
+    <p>المنصة الرقمية المتكاملة لخدمات الغاز، نربط الموزعين بالمستهلكين بأحدث التقنيات.</p>
     
     <a href="login.html" class="btn btn-login">تسجيل الدخول</a>
     <a href="regist.html" class="btn btn-reg">إنشاء حساب جديد</a>
@@ -52,9 +56,10 @@
         firebase.initializeApp(firebaseConfig);
     }
     
-    // التحقق التلقائي: إذا كان المستخدم مسجل دخول بالفعل، ينقله للوحة التحكم
+    // التحقق التلقائي
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
+            // ملاحظة: يُفضل هنا إضافة منطق للتحقق من الـ role والتحويل للصفحة الصحيحة (dashboard أو view)
             window.location.href = 'dashboard.html';
         }
     });
