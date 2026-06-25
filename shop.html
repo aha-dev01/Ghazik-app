@@ -24,6 +24,13 @@
         #stars { display: flex; justify-content: center; gap: 5px; margin: 10px 0; }
         #stars i { cursor: pointer; color: #cbd5e1; font-size: 28px; transition: 0.2s; }
         #stars i.active { color: #f59e0b; }
+        
+        .delivery-link { text-decoration: none; color: inherit; display: block; margin-bottom: 10px; }
+        .delivery-bar { padding: 14px; border-radius: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 3px 6px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; transition: 0.3s; }
+        .delivery-bar.available { background: #f0f9ff; border-color: #bae6fd; cursor: pointer; }
+        .delivery-bar.available:hover { background: #e0f2fe; transform: translateY(-1px); }
+        .delivery-bar.unavailable { background: #f8fafc; border-color: #e2e8f0; cursor: not-allowed; opacity: 0.8; }
+        
         .inventory-grid { display: grid; gap: 8px; }
         .item-card { background: white; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
         .status-pill { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
@@ -46,10 +53,8 @@
     let deviceId = localStorage.getItem('gastracker_device_id') || ('dev_' + Math.random().toString(36).substr(2, 9));
     localStorage.setItem('gastracker_device_id', deviceId);
 
-    // دالة تنسيق التاريخ: تأخذ السلسلة النصية وتستخرج جزء التاريخ فقط (يوم/شهر/سنة)
     function formatDateTime(val) { 
         if (!val) return "غير متوفر";
-        // إذا كان التاريخ بتنسيق معين (مثلاً "24T21:53...") نقوم بأخذ أول جزء
         return val.split('T')[0]; 
     }
 
@@ -57,6 +62,10 @@
         if (!doc.exists) return;
         const d = doc.data();
         const logo = d.shopLogo ? `<img src="${d.shopLogo}" class="shop-logo">` : `<div style="background:#e67e22; color:white; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto 5px auto; font-size:20px;"><i class="fas fa-fire"></i></div>`;
+
+        // صياغة الرسالة باللهجة السودانية وتوجيه الموزع والزبون بذكاء
+        const textTemplate = `السلام عليكم ، لقيت مركزكم (${d.name}) في تطبيق غازك وعاوز أطلب توصيل أسطوانة للمنزل.\n\nنوع الأسطوانة المطلوبة:\n- [اكتب نوع الأسطوانة هنا]\n\nموقعي على الخريطة (لوكيشن):\n- [الرجاء إرسال موقعك الحالي من الواتساب]`;
+        const whatsappMessage = encodeURIComponent(textTemplate);
 
         document.getElementById('shopDetails').innerHTML = `
             <div class="header-bar"><a href="view.html" class="back-btn"><i class="fas fa-arrow-right"></i> رجوع</a></div>
@@ -67,11 +76,44 @@
                 <div id="stars">${[1,2,3,4,5].map(n => `<i class="fas fa-star" data-value="${n}"></i>`).join('')}</div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
                     <a href="${d.mapLink}" target="_blank" class="btn" style="background:#3b82f6; flex:1;">الخريطة</a>
-                    <a href="https://wa.me/${d.whatsappNumber}" target="_blank" class="btn" style="background:#25d366; flex:1;">واتساب</a>
+                    <!-- تعديل زر الواتساب الافتراضي أيضاً ليحمل نفس الرسالة الترحيبية المخصصة للمحل -->
+                    <a href="https://wa.me/${d.whatsappNumber}?text=${whatsappMessage}" target="_blank" class="btn" style="background:#25d366; flex:1;">واتساب</a>
                 </div>
             </div>
+
+            <a id="deliveryLink" href="#" target="_blank" class="delivery-link">
+                <div id="deliveryBar" class="delivery-bar unavailable">
+                    <span id="deliveryStatus">جاري الفحص...</span>
+                </div>
+            </a>
+
             <h3>المخزون المتوفر:</h3>
             <div id="inventory" class="inventory-grid"></div>`;
+
+        db.collection("distributors").doc(shopId).onSnapshot(shopDoc => {
+            if(shopDoc.exists) {
+                const shopData = shopDoc.data();
+                const deliveryAvailable = shopData.deliveryAvailable || false;
+                
+                const linkEl = document.getElementById('deliveryLink');
+                const barEl = document.getElementById('deliveryBar');
+                const statusEl = document.getElementById('deliveryStatus');
+                
+                if(statusEl && barEl && linkEl) {
+                    if(deliveryAvailable) {
+                        linkEl.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappMessage}`;
+                        linkEl.style.pointerEvents = "auto";
+                        barEl.className = "delivery-bar available";
+                        statusEl.innerHTML = `<span style="color: #0369a1;"><i class="fas fa-truck fa-lg"></i> خدمة التوصيل متاحة (اضغط لطلب التوصيل)</span>`;
+                    } else {
+                        linkEl.href = "#";
+                        linkEl.style.pointerEvents = "none";
+                        barEl.className = "delivery-bar unavailable";
+                        statusEl.innerHTML = `<span style="color: #64748b;"><i class="fas fa-times-circle"></i> خدمة التوصيل غير متاحة حالياً</span>`;
+                    }
+                }
+            }
+        });
 
         const stars = document.querySelectorAll('#stars i');
         const updateUI = (val) => stars.forEach((s, i) => s.className = i < val ? 'fas fa-star active' : 'fas fa-star');
