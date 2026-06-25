@@ -13,14 +13,26 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
     <style>
         body { background: #eef2f7; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 500px; margin: auto; }
         .header-section { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
         .top-nav { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; padding: 0 5px; }
         .top-nav a { color: #64748b; text-decoration: none; transition: 0.3s; }
-        .status-bar { background: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        /* تحديث شريط الحالة ليكون أكثر بروزاً ومقروئية */
+        .status-bar { background: white; padding: 14px 10px; border-radius: 14px; margin-bottom: 15px; display: flex; gap: 10px; box-shadow: 0 3px 6px rgba(0,0,0,0.06); }
+        .status-col { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
+        .status-col:first-child { border-left: 2px solid #f1f5f9; padding-left: 10px; } 
+        
+        /* تكبير حجم الخط وإضافة الأيقونات */
+        .status-info { font-size: 14px; color: #34495e; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+        .status-info b { font-size: 14px; }
+        
+        /* تحسين الأزرار لتصبح مريحة للضغط واللمس */
+        .status-btn { border: none; background: #f1f5f9; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; white-space: nowrap; }
+        .status-btn:hover { background: #cbd5e1; }
+
         .main-header { display: flex; align-items: center; justify-content: space-between; background: white; padding: 12px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
         .shop-info { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         .icon-box { background: #e67e22; color: white; min-width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 15px; }
@@ -58,9 +70,19 @@
         </div>
     </div>
 
+    <!-- شريط الحالة المطور والمقروء بالكامل في سطر واحد -->
     <div class="status-bar">
-        <span>الحالة: <b id="statusDisplay">مفتوح</b></span>
-        <button id="holidayBtn" onclick="toggleHoliday()" style="border:none; background:#f1f5f9; padding:5px 12px; border-radius:8px; cursor:pointer; font-size:12px;">تغيير الوضع</button>
+        <!-- القسم الأول: حالة المتجر (أيقونة المتجر) -->
+        <div class="status-col">
+            <span class="status-info"><i class="fas fa-store"></i> <b id="statusDisplay">مفتوح</b></span>
+            <button id="holidayBtn" class="status-btn" onclick="toggleHoliday()">إغلاق</button>
+        </div>
+        
+        <!-- القسم الثاني: حالة التوصيل (أيقونة الشاحنة) -->
+        <div class="status-col">
+            <span class="status-info"><i class="fas fa-truck"></i> <b id="deliveryDisplay">غير متاح</b></span>
+            <button id="deliveryBtn" class="status-btn" onclick="toggleDelivery()">تفعيل</button>
+        </div>
     </div>
     
     <div class="card">
@@ -107,10 +129,18 @@
             db.collection("distributors").doc(user.uid).onSnapshot(doc => {
                 const data = doc.data();
                 document.getElementById('name').innerText = data.name;
+                
+                // 1. تحديث وعرض حالة المتجر المفتوح/المغلق
                 const isClosed = data.isClosed || false;
                 document.getElementById('statusDisplay').innerText = isClosed ? 'مغلق' : 'مفتوح';
                 document.getElementById('holidayBtn').innerText = isClosed ? 'فتح' : 'إغلاق';
                 document.getElementById('statusDisplay').style.color = isClosed ? '#e74c3c' : '#22c55e';
+
+                // 2. تحديث وعرض حالة التوصيل العامة للمحل ككل
+                const deliveryAvailable = data.deliveryAvailable || false;
+                document.getElementById('deliveryDisplay').innerText = deliveryAvailable ? 'متاح' : 'غير متاح';
+                document.getElementById('deliveryBtn').innerText = deliveryAvailable ? 'تعطيل' : 'تفعيل';
+                document.getElementById('deliveryDisplay').style.color = deliveryAvailable ? '#0284c7' : '#64748b';
             });
             loadStock();
         } else { window.location.href = 'index.html'; }
@@ -123,20 +153,27 @@
         await docRef.update({ isClosed: !(doc.data().isClosed || false) });
     }
 
+    async function toggleDelivery() {
+        const user = auth.currentUser;
+        if (!user) return;
+        const docRef = db.collection("distributors").doc(user.uid);
+        const doc = await docRef.get();
+        const currentStatus = doc.data().deliveryAvailable || false;
+        await docRef.update({ deliveryAvailable: !currentStatus });
+    }
+
     async function addItem() {
         const type = document.querySelector('input[name="gasType"]:checked').value;
         const priceInput = document.getElementById('gasPrice').value;
         const status = document.querySelector('input[name="gasStatus"]:checked').value;
-        const now = new Date().toISOString(); // استخدام التنسيق الزمني للترتيب
+        const now = new Date().toISOString(); 
         
         if (!priceInput) return Swal.fire('تنبيه', 'الرجاء إدخال السعر', 'warning');
         
-        // 1. تحديث المخزون
         const q = await db.collection("gas_inventory").where("distributorId", "==", auth.currentUser.uid).where("cylinderType", "==", type).get();
         if (!q.empty) { await q.docs[0].ref.update({ price: parseInt(priceInput), status: status, lastUpdated: now }); }
         else { await db.collection("gas_inventory").add({ distributorId: auth.currentUser.uid, cylinderType: type, price: parseInt(priceInput), status: status, lastUpdated: now }); }
         
-        // 2. تحديث وقت التعديل في بيانات المتجر الرئيسية للترتيب
         await db.collection("distributors").doc(auth.currentUser.uid).update({ updatedAt: now });
         
         document.getElementById('gasPrice').value = "";
@@ -171,7 +208,7 @@
 
     function logout() { auth.signOut().then(() => window.location.href = 'index.html'); }
     function shareToWhatsApp() { 
-        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${window.location.origin}/Ghazik-app/view.html?id=${auth.currentUser.uid}`, '_blank'); 
+        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${window.location.origin}/view.html?id=${auth.currentUser.uid}`, '_blank'); 
     }
 </script>
 </body>
