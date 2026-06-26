@@ -63,9 +63,13 @@
         const d = doc.data();
         const logo = d.shopLogo ? `<img src="${d.shopLogo}" class="shop-logo">` : `<div style="background:#e67e22; color:white; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto 5px auto; font-size:20px;"><i class="fas fa-fire"></i></div>`;
 
-        // صياغة الرسالة باللهجة السودانية وتوجيه الموزع والزبون بذكاء
-        const textTemplate = `السلام عليكم ، لقيت مركزكم (${d.name}) في تطبيق غازك وعاوز أطلب توصيل أسطوانة للمنزل.\n\nنوع الأسطوانة المطلوبة:\n- [اكتب نوع الأسطوانة هنا]\n\nموقعي على الخريطة (لوكيشن):\n- [الرجاء إرسال موقعك الحالي من الواتساب]`;
-        const whatsappMessage = encodeURIComponent(textTemplate);
+        // 1. رسالة طلب التوصيل (عندما تكون الخدمة مفعلة)
+        const deliveryTemplate = `السلام عليكم ، لقيت مركزكم (${d.name}) في تطبيق غازك وعاوز أطلب توصيل أسطوانة للمنزل.\n\nنوع الأسطوانة المطلوبة:\n- [اكتب نوع الأسطوانة هنا]\n\nموقعي على الخريطة (لوكيشن):\n- [الرجاء إرسال موقعك الحالي من الواتساب]`;
+        const whatsappDeliveryMessage = encodeURIComponent(deliveryTemplate);
+
+        // 2. رسالة الاستفسار العامة (عندما تكون الخدمة مغلقة)
+        const generalTemplate = `السلام عليكم ، لقيت مركزكم (${d.name}) في تطبيق غازك وعاوز أستفسر عن توفر الغاز ؟`;
+        const whatsappGeneralMessage = encodeURIComponent(generalTemplate);
 
         document.getElementById('shopDetails').innerHTML = `
             <div class="header-bar"><a href="view.html" class="back-btn"><i class="fas fa-arrow-right"></i> رجوع</a></div>
@@ -76,8 +80,8 @@
                 <div id="stars">${[1,2,3,4,5].map(n => `<i class="fas fa-star" data-value="${n}"></i>`).join('')}</div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
                     <a href="${d.mapLink}" target="_blank" class="btn" style="background:#3b82f6; flex:1;">الخريطة</a>
-                    <!-- تعديل زر الواتساب الافتراضي أيضاً ليحمل نفس الرسالة الترحيبية المخصصة للمحل -->
-                    <a href="https://wa.me/${d.whatsappNumber}?text=${whatsappMessage}" target="_blank" class="btn" style="background:#25d366; flex:1;">واتساب</a>
+                    <!-- إضافة معرف id لتحديث الرابط ديناميكياً -->
+                    <a id="mainWhatsappBtn" href="https://wa.me/${d.whatsappNumber}?text=${whatsappGeneralMessage}" target="_blank" class="btn" style="background:#25d366; flex:1;">واتساب</a>
                 </div>
             </div>
 
@@ -98,14 +102,23 @@
                 const linkEl = document.getElementById('deliveryLink');
                 const barEl = document.getElementById('deliveryBar');
                 const statusEl = document.getElementById('deliveryStatus');
+                const mainWhatsappBtn = document.getElementById('mainWhatsappBtn'); // الزر الرئيسي
                 
-                if(statusEl && barEl && linkEl) {
-                    if(deliveryAvailable) {
-                        linkEl.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappMessage}`;
+                if(deliveryAvailable) {
+                    // إذا التوصيل متاح: الزرين يرسلان رسالة التوصيل
+                    if(mainWhatsappBtn) mainWhatsappBtn.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappDeliveryMessage}`;
+                    
+                    if(linkEl && barEl && statusEl) {
+                        linkEl.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappDeliveryMessage}`;
                         linkEl.style.pointerEvents = "auto";
                         barEl.className = "delivery-bar available";
                         statusEl.innerHTML = `<span style="color: #0369a1;"><i class="fas fa-truck fa-lg"></i> خدمة التوصيل متاحة (اضغط لطلب التوصيل)</span>`;
-                    } else {
+                    }
+                } else {
+                    // إذا التوصيل غير متاح: الزر الرئيسي يرسل رسالة استفسار عادية، وشريط التوصيل يقفل
+                    if(mainWhatsappBtn) mainWhatsappBtn.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappGeneralMessage}`;
+                    
+                    if(linkEl && barEl && statusEl) {
                         linkEl.href = "#";
                         linkEl.style.pointerEvents = "none";
                         barEl.className = "delivery-bar unavailable";
