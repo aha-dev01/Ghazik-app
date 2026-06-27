@@ -20,16 +20,13 @@
         .top-nav { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; padding: 0 5px; }
         .top-nav a { color: #64748b; text-decoration: none; transition: 0.3s; }
         
-        /* تحديث شريط الحالة ليكون أكثر بروزاً ومقروئية */
         .status-bar { background: white; padding: 14px 10px; border-radius: 14px; margin-bottom: 15px; display: flex; gap: 10px; box-shadow: 0 3px 6px rgba(0,0,0,0.06); }
         .status-col { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
         .status-col:first-child { border-left: 2px solid #f1f5f9; padding-left: 10px; } 
         
-        /* تكبير حجم الخط وإضافة الأيقونات */
         .status-info { font-size: 14px; color: #34495e; font-weight: 600; display: flex; align-items: center; gap: 5px; }
         .status-info b { font-size: 14px; }
         
-        /* تحسين الأزرار لتصبح مريحة للضغط واللمس */
         .status-btn { border: none; background: #f1f5f9; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; white-space: nowrap; }
         .status-btn:hover { background: #cbd5e1; }
 
@@ -70,15 +67,11 @@
         </div>
     </div>
 
-    <!-- شريط الحالة المطور والمقروء بالكامل في سطر واحد -->
     <div class="status-bar">
-        <!-- القسم الأول: حالة المتجر (أيقونة المتجر) -->
         <div class="status-col">
             <span class="status-info"><i class="fas fa-store"></i> <b id="statusDisplay">مفتوح</b></span>
             <button id="holidayBtn" class="status-btn" onclick="toggleHoliday()">إغلاق</button>
         </div>
-        
-        <!-- القسم الثاني: حالة التوصيل (أيقونة الشاحنة) -->
         <div class="status-col">
             <span class="status-info"><i class="fas fa-truck"></i> <b id="deliveryDisplay">غير متاح</b></span>
             <button id="deliveryBtn" class="status-btn" onclick="toggleDelivery()">تفعيل</button>
@@ -90,12 +83,12 @@
         <div class="grid">
             <label class="option"><input type="radio" name="gasType" value="غاز أمان" checked> غاز أمان</label>
             <label class="option"><input type="radio" name="gasType" value="غاز الوطنية"> غاز الوطنية</label>
-            <label class="option"><input type="radio" name="gasType" value="غاز النحلة"> غاز النحلة</label>
             <label class="option"><input type="radio" name="gasType" value="غاز النيل"> غاز النيل</label>
             <label class="option"><input type="radio" name="gasType" value="غاز أبرسي"> غاز أبرسي</label>
             <label class="option"><input type="radio" name="gasType" value="غاز إيران"> غاز إيران</label>
             <label class="option"><input type="radio" name="gasType" value="غاز قادرة"> غاز قادرة</label>
             <label class="option"><input type="radio" name="gasType" value="غاز سوداغاز"> غاز سوداغاز</label>
+            <label class="option"><input type="radio" name="gasType" value="غاز النحلة"> غاز النحلة</label>
         </div>
         <input type="number" id="gasPrice" placeholder="السعر (ج.س)">
         <div class="status-grid">
@@ -119,7 +112,16 @@
     const auth = firebase.auth(); const db = firebase.firestore();
 
     function getTypeColor(type) {
-        const colors = { "غاز أمان": "#e74c3c", "غاز الوطنية": "#3498db", "غاز النيل": "#2ecc71", "غاز أبرسي": "#f1c40f", "غاز إيران": "#9b59b6", "غاز قادرة": "#e67e22", "غاز سوداغاز": "#34495e" };
+        const colors = { 
+            "غاز أمان": "#e74c3c", 
+            "غاز الوطنية": "#3498db", 
+            "غاز النيل": "#2ecc71", 
+            "غاز أبرسي": "#f1c40f", 
+            "غاز إيران": "#9b59b6", 
+            "غاز قادرة": "#e67e22", 
+            "غاز سوداغاز": "#34495e",
+            "غاز النحلة": "#f39c12" 
+        };
         return colors[type] || "#95a5a6";
     }
 
@@ -130,14 +132,10 @@
             db.collection("distributors").doc(user.uid).onSnapshot(doc => {
                 const data = doc.data();
                 document.getElementById('name').innerText = data.name;
-                
-                // 1. تحديث وعرض حالة المتجر المفتوح/المغلق
                 const isClosed = data.isClosed || false;
                 document.getElementById('statusDisplay').innerText = isClosed ? 'مغلق' : 'مفتوح';
                 document.getElementById('holidayBtn').innerText = isClosed ? 'فتح' : 'إغلاق';
                 document.getElementById('statusDisplay').style.color = isClosed ? '#e74c3c' : '#22c55e';
-
-                // 2. تحديث وعرض حالة التوصيل العامة للمحل ككل
                 const deliveryAvailable = data.deliveryAvailable || false;
                 document.getElementById('deliveryDisplay').innerText = deliveryAvailable ? 'متاح' : 'غير متاح';
                 document.getElementById('deliveryBtn').innerText = deliveryAvailable ? 'تعطيل' : 'تفعيل';
@@ -168,15 +166,11 @@
         const priceInput = document.getElementById('gasPrice').value;
         const status = document.querySelector('input[name="gasStatus"]:checked').value;
         const now = new Date().toISOString(); 
-        
         if (!priceInput) return Swal.fire('تنبيه', 'الرجاء إدخال السعر', 'warning');
-        
         const q = await db.collection("gas_inventory").where("distributorId", "==", auth.currentUser.uid).where("cylinderType", "==", type).get();
         if (!q.empty) { await q.docs[0].ref.update({ price: parseInt(priceInput), status: status, lastUpdated: now }); }
         else { await db.collection("gas_inventory").add({ distributorId: auth.currentUser.uid, cylinderType: type, price: parseInt(priceInput), status: status, lastUpdated: now }); }
-        
         await db.collection("distributors").doc(auth.currentUser.uid).update({ updatedAt: now });
-        
         document.getElementById('gasPrice').value = "";
         Swal.fire('تم الحفظ!', 'تم تحديث البيانات وترتيب المتجر بنجاح', 'success');
     }
@@ -209,7 +203,7 @@
 
     function logout() { auth.signOut().then(() => window.location.href = 'index.html'); }
     function shareToWhatsApp() { 
-        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${window.location.origin}/view.html?id=${auth.currentUser.uid}`, '_blank'); 
+        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${window.location.origin}/Ghazik-app/view.html?id=${auth.currentUser.uid}`, '_blank'); 
     }
 </script>
 </body>
