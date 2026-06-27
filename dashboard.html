@@ -113,14 +113,14 @@
 
     function getTypeColor(type) {
         const colors = { 
-            "غاز أمان": "#3498", 
-            "غاز الوطنية": "#3498db", 
-            "غاز النيل": "#2ecc71", 
-            "غاز أبرسي": "#f1c40f", 
-            "غاز إيران": "#9b59b6", 
-            "غاز قادرة": "#e67e22", 
-            "غاز سوداغاز": "#34495e",
-            "غاز النحلة": "#f39c12" 
+            "غاز أمان": "#87CEEB", 
+            "غاز الوطنية": "#ccc76c",
+            "غاز النيل": "#e67e22", 
+            "غاز أبرسي": "#2ecc71",
+            "غاز إيران": "#f1c40f", 
+            "غاز قادرة": "#3498", 
+            "غاز سوداغاز": "#34495",
+            "غاز النحلة": "#9b59b6" 
         };
         return colors[type] || "#95a5a6";
     }
@@ -203,7 +203,7 @@
 
     function logout() { auth.signOut().then(() => window.location.href = 'index.html'); }
     function shareToWhatsApp() { 
-        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${window.location.origin}/Ghazik-app/view.html?id=${auth.currentUser.uid}`, '_blank'); 
+        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${window.location.origin}/view.html?id=${auth.currentUser.uid}`, '_blank'); 
     }
 </script>
 </body>
