@@ -111,26 +111,27 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(); const db = firebase.firestore();
 
-    function getTypeColor(type) {
-        const colors = { 
-            "غاز أمان": "#87CEEB", 
-            "غاز الوطنية": "#ccc76c",
-            "غاز النيل": "#e67e22", 
-            "غاز أبرسي": "#2ecc71",
-            "غاز إيران": "#f1c40f", 
-            "غاز قادرة": "#202899",
-            "غاز سوداغاز": "#3498",
-            "غاز النحلة": "#9b59b6" 
-        };
-        return colors[type] || "#95a5a6";
-    }
-
-    function viewPage() { if(auth.currentUser) window.open(`view.html?id=${auth.currentUser.uid}`, '_blank'); }
-
     auth.onAuthStateChanged((user) => {
         if (user) {
             db.collection("distributors").doc(user.uid).onSnapshot(doc => {
                 const data = doc.data();
+                
+                // --- منطق الإجبار على إكمال البيانات للمستخدمين القدامى والجدد ---
+                if (!data.mapLink || !data.mapDesc || !data.whatsappNumber) {
+                    Swal.fire({
+                        title: 'بيانات ناقصة! ⚠️',
+                        text: 'يجب عليك إكمال (رقم الواتساب، رابط الخريطة، والعنوان المختصر) ليظهر متجرك للزبائن.',
+                        icon: 'warning',
+                        confirmButtonText: 'إكمال البيانات الآن',
+                        allowOutsideClick: false, // لا يمكن إغلاق التنبيه
+                        allowEscapeKey: false
+                    }).then(() => {
+                        window.location.href = 'settings.html';
+                    });
+                    return; // إيقاف إكمال تحميل الصفحة
+                }
+                // -------------------------------------------------------------
+
                 document.getElementById('name').innerText = data.name;
                 const isClosed = data.isClosed || false;
                 document.getElementById('statusDisplay').innerText = isClosed ? 'مغلق' : 'مفتوح';
@@ -196,15 +197,19 @@
         });
     }
 
+    function getTypeColor(type) {
+        const colors = { "غاز أمان": "#87CEEB", "غاز الوطنية": "#ccc76c", "غاز النيل": "#e67e22", "غاز أبرسي": "#2ecc71", "غاز إيران": "#f1c40f", "غاز قادرة": "#3498db", "غاز سوداغاز": "#34495e", "غاز النحلة": "#9b59b6" };
+        return colors[type] || "#95a5a6";
+    }
+
     async function deleteItem(docId) {
         const result = await Swal.fire({ title: 'هل أنت متأكد؟', icon: 'warning', showCancelButton: true });
         if (result.isConfirmed) { await db.collection("gas_inventory").doc(docId).delete(); }
     }
 
     function logout() { auth.signOut().then(() => window.location.href = 'index.html'); }
-    function shareToWhatsApp() { 
-        window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${window.location.origin}/view.html?id=${auth.currentUser.uid}`, '_blank'); 
-    }
+    function viewPage() { if(auth.currentUser) window.open(`view.html?id=${auth.currentUser.uid}`, '_blank'); }
+    function shareToWhatsApp() { window.open(`https://wa.me/?text=مرحباً، تابعوا أسعارنا عبر الرابط: ${window.location.origin}/view.html?id=${auth.currentUser.uid}`, '_blank'); }
 </script>
 </body>
 </html>
