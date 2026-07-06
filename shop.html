@@ -28,14 +28,16 @@
         .delivery-link { text-decoration: none; color: inherit; display: block; margin-bottom: 10px; }
         .delivery-bar { padding: 14px; border-radius: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 3px 6px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; transition: 0.3s; }
         .delivery-bar.available { background: #f0f9ff; border-color: #bae6fd; cursor: pointer; }
-        .delivery-bar.available:hover { background: #e0f2fe; transform: translateY(-1px); }
         .delivery-bar.unavailable { background: #f8fafc; border-color: #e2e8f0; cursor: not-allowed; opacity: 0.8; }
         
         .inventory-grid { display: grid; gap: 8px; }
-        .item-card { background: white; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+        .item-card { background: white; padding: 12px; border-radius: 15px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
         .status-pill { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
         .price-text { font-weight: 900; font-size: 1.1rem; color: #f97316; }
         .update-time { font-size: 0.65rem; color: #94a3b8; display: block; margin-top: 2px; }
+        
+        /* شريط التنبيه الجديد */
+        .notice-banner { background: #fff7ed; color: #9a3412; padding: 10px; border-radius: 12px; font-size: 0.8rem; text-align: center; margin: 10px 0; border: 1px solid #fed7aa; }
     </style>
 </head>
 <body>
@@ -63,11 +65,8 @@
         const d = doc.data();
         const logo = d.shopLogo ? `<img src="${d.shopLogo}" class="shop-logo">` : `<div style="background:#e67e22; color:white; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto 5px auto; font-size:20px;"><i class="fas fa-fire"></i></div>`;
 
-        // 1. رسالة طلب التوصيل (عندما تكون الخدمة مفعلة)
         const deliveryTemplate = `السلام عليكم ، لقيت مركزكم (${d.name}) في تطبيق غازك وعاوز أطلب توصيل أسطوانة للمنزل.\n\nنوع الأسطوانة المطلوبة:\n- [اكتب نوع الأسطوانة هنا]\n\nموقعي على الخريطة (لوكيشن):\n- [الرجاء إرسال موقعك الحالي من الواتساب]`;
         const whatsappDeliveryMessage = encodeURIComponent(deliveryTemplate);
-
-        // 2. رسالة الاستفسار العامة (عندما تكون الخدمة مغلقة)
         const generalTemplate = `السلام عليكم ، لقيت مركزكم (${d.name}) في تطبيق غازك وعاوز أستفسر عن توفر الغاز ؟`;
         const whatsappGeneralMessage = encodeURIComponent(generalTemplate);
 
@@ -80,8 +79,7 @@
                 <div id="stars">${[1,2,3,4,5].map(n => `<i class="fas fa-star" data-value="${n}"></i>`).join('')}</div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
                     <a href="${d.mapLink}" target="_blank" class="btn" style="background:#3b82f6; flex:1;">الخريطة</a>
-                    <!-- إضافة معرف id لتحديث الرابط ديناميكياً -->
-                    <a id="mainWhatsappBtn" href="https://wa.me/${d.whatsappNumber}?text=${whatsappGeneralMessage}" target="_blank" class="btn" style="background:#25d366; flex:1;">واتساب</a>
+                    <a id="mainWhatsappBtn" href="#" target="_blank" class="btn" style="background:#25d366; flex:1;">واتساب</a>
                 </div>
             </div>
 
@@ -92,61 +90,34 @@
             </a>
 
             <h3>المخزون المتوفر:</h3>
-            <div id="inventory" class="inventory-grid"></div>`;
+            <div id="inventory" class="inventory-grid"></div>
+            <div class="notice-banner">
+                <i class="fas fa-info-circle"></i> الأسعار الموضحة أعلاه هي قيمة أسطوانة الغاز فقط، وتضاف رسوم التوصيل حسب الموقع.
+            </div>`;
 
         db.collection("distributors").doc(shopId).onSnapshot(shopDoc => {
             if(shopDoc.exists) {
                 const shopData = shopDoc.data();
                 const deliveryAvailable = shopData.deliveryAvailable || false;
-                
+                const mainWhatsappBtn = document.getElementById('mainWhatsappBtn');
                 const linkEl = document.getElementById('deliveryLink');
                 const barEl = document.getElementById('deliveryBar');
                 const statusEl = document.getElementById('deliveryStatus');
-                const mainWhatsappBtn = document.getElementById('mainWhatsappBtn'); // الزر الرئيسي
                 
                 if(deliveryAvailable) {
-                    // إذا التوصيل متاح: الزرين يرسلان رسالة التوصيل
-                    if(mainWhatsappBtn) mainWhatsappBtn.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappDeliveryMessage}`;
-                    
-                    if(linkEl && barEl && statusEl) {
-                        linkEl.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappDeliveryMessage}`;
-                        linkEl.style.pointerEvents = "auto";
-                        barEl.className = "delivery-bar available";
-                        statusEl.innerHTML = `<span style="color: #0369a1;"><i class="fas fa-truck fa-lg"></i> خدمة التوصيل متاحة (اضغط لطلب التوصيل)</span>`;
-                    }
+                    mainWhatsappBtn.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappDeliveryMessage}`;
+                    linkEl.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappDeliveryMessage}`;
+                    linkEl.style.pointerEvents = "auto";
+                    barEl.className = "delivery-bar available";
+                    statusEl.innerHTML = `<span style="color: #0369a1;"><i class="fas fa-truck fa-lg"></i> خدمة التوصيل متاحة (اضغط للطلب)</span>`;
                 } else {
-                    // إذا التوصيل غير متاح: الزر الرئيسي يرسل رسالة استفسار عادية، وشريط التوصيل يقفل
-                    if(mainWhatsappBtn) mainWhatsappBtn.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappGeneralMessage}`;
-                    
-                    if(linkEl && barEl && statusEl) {
-                        linkEl.href = "#";
-                        linkEl.style.pointerEvents = "none";
-                        barEl.className = "delivery-bar unavailable";
-                        statusEl.innerHTML = `<span style="color: #64748b;"><i class="fas fa-times-circle"></i> خدمة التوصيل غير متاحة حالياً</span>`;
-                    }
+                    mainWhatsappBtn.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappGeneralMessage}`;
+                    linkEl.href = "#";
+                    linkEl.style.pointerEvents = "none";
+                    barEl.className = "delivery-bar unavailable";
+                    statusEl.innerHTML = `<span style="color: #64748b;"><i class="fas fa-times-circle"></i> خدمة التوصيل غير متاحة حالياً</span>`;
                 }
             }
-        });
-
-        const stars = document.querySelectorAll('#stars i');
-        const updateUI = (val) => stars.forEach((s, i) => s.className = i < val ? 'fas fa-star active' : 'fas fa-star');
-        db.collection("reviews").doc(`${shopId}_${deviceId}`).get().then(r => { if(r.exists) updateUI(r.data().rating); });
-        
-        stars.forEach(s => s.onclick = () => {
-            const val = parseInt(s.getAttribute('data-value'));
-            updateUI(val);
-            db.collection("reviews").doc(`${shopId}_${deviceId}`).set({ distributorId: shopId, rating: val, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
-                const statusEl = document.getElementById('ratingStats');
-                statusEl.innerHTML = "شكراً لتقييمك! ❤️";
-                setTimeout(() => { location.reload(); }, 2000);
-            });
-        });
-
-        db.collection("reviews").where("distributorId", "==", shopId).onSnapshot(snap => {
-            let total = 0; snap.forEach(doc => total += doc.data().rating);
-            const avg = snap.size > 0 ? (total / snap.size).toFixed(1) : 0;
-            const el = document.getElementById('ratingStats');
-            if(el) el.innerHTML = `${avg} <i class="fas fa-star" style="color:#f59e0b"></i>`;
         });
 
         db.collection("gas_inventory").where("distributorId", "==", shopId).onSnapshot(snap => {
@@ -160,7 +131,9 @@
                     return `<div class="item-card">
                         <div><b>${i.cylinderType}</b><br><span class="status-pill" style="background:${s.bg}; color:${s.text};">${i.status}</span>
                         <span class="update-time">تاريخ التحديث: ${formatDateTime(i.lastUpdated)}</span></div>
-                        <div class="price-text">${i.price} ج.س</div>
+                        <div style="text-align:left;">
+                            <div class="price-text">${i.price} ج.س</div>
+                        </div>
                     </div>`;
                 }).join('');
         });
