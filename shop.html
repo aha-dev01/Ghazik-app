@@ -8,35 +8,24 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f97316">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/JhNMNF8Y/1782113129362.png">
-    
     <style>
-        body { font-family: 'Cairo', sans-serif; background: #f8fafc; padding: 10px; color: #334155; -webkit-font-smoothing: antialiased; }
+        body { font-family: 'Cairo', sans-serif; background: #f8fafc; padding: 10px; color: #334155; }
         .container { max-width: 500px; margin: auto; }
         .header-bar { display: flex; align-items: center; margin-bottom: 10px; }
         .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #ffffff; padding: 6px 14px; border-radius: 50px; color: #475569; text-decoration: none; font-size: 0.85rem; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .card { background: white; padding: 15px; border-radius: 18px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+        .card { background: white; padding: 15px; border-radius: 18px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); text-align: center; }
         .shop-logo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #e67e22; margin-bottom: 5px; }
         h1 { font-size: 1.25rem; font-weight: 900; margin: 5px 0; }
         .btn { display: block; padding: 8px; border-radius: 10px; text-align: center; color: white; text-decoration: none; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
         #stars { display: flex; justify-content: center; gap: 5px; margin: 10px 0; }
         #stars i { cursor: pointer; color: #cbd5e1; font-size: 28px; transition: 0.2s; }
         #stars i.active { color: #f59e0b; }
-        
-        .delivery-link { text-decoration: none; color: inherit; display: block; margin-bottom: 10px; }
-        .delivery-bar { padding: 14px; border-radius: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 3px 6px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; transition: 0.3s; }
-        .delivery-bar.available { background: #f0f9ff; border-color: #bae6fd; cursor: pointer; }
-        .delivery-bar.unavailable { background: #f8fafc; border-color: #e2e8f0; cursor: not-allowed; opacity: 0.8; }
-        
+        .delivery-bar { padding: 14px; border-radius: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; font-weight: bold; margin-bottom: 10px; border: 1px solid #e2e8f0; }
+        .available { background: #f0f9ff; border-color: #bae6fd; }
+        .unavailable { background: #f8fafc; border-color: #e2e8f0; opacity: 0.8; }
         .inventory-grid { display: grid; gap: 8px; }
         .item-card { background: white; padding: 12px; border-radius: 15px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
-        .status-pill { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
-        .price-text { font-weight: 900; font-size: 1.1rem; color: #f97316; }
-        .update-time { font-size: 0.65rem; color: #94a3b8; display: block; margin-top: 2px; }
-        
-        /* شريط التنبيه الجديد */
+        .price-text { font-weight: 900; color: #f97316; }
         .notice-banner { background: #fff7ed; color: #9a3412; padding: 10px; border-radius: 12px; font-size: 0.8rem; text-align: center; margin: 10px 0; border: 1px solid #fed7aa; }
     </style>
 </head>
@@ -44,7 +33,7 @@
 
 <div class="container" id="shopDetails">
     <div class="header-bar"><a href="view.html" class="back-btn"><i class="fas fa-arrow-right"></i> رجوع</a></div>
-    <div class="card" style="text-align:center;">جاري تحميل البيانات...</div>
+    <div class="card">جاري تحميل البيانات...</div>
 </div>
 
 <script>
@@ -55,87 +44,69 @@
     let deviceId = localStorage.getItem('gastracker_device_id') || ('dev_' + Math.random().toString(36).substr(2, 9));
     localStorage.setItem('gastracker_device_id', deviceId);
 
-    function formatDateTime(val) { 
-        if (!val) return "غير متوفر";
-        return val.split('T')[0]; 
-    }
-
     db.collection("distributors").doc(shopId).get().then(doc => {
         if (!doc.exists) return;
         const d = doc.data();
-        const logo = d.shopLogo ? `<img src="${d.shopLogo}" class="shop-logo">` : `<div style="background:#e67e22; color:white; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto 5px auto; font-size:20px;"><i class="fas fa-fire"></i></div>`;
-
-        const deliveryTemplate = `السلام عليكم ، لقيت مركزكم (${d.name}) في تطبيق غازك وعاوز أطلب توصيل أسطوانة للمنزل.\n\nنوع الأسطوانة المطلوبة:\n- [اكتب نوع الأسطوانة هنا]\n\nموقعي على الخريطة (لوكيشن):\n- [الرجاء إرسال موقعك الحالي من الواتساب]`;
-        const whatsappDeliveryMessage = encodeURIComponent(deliveryTemplate);
-        const generalTemplate = `السلام عليكم ، لقيت مركزكم (${d.name}) في تطبيق غازك وعاوز أستفسر عن توفر الغاز ؟`;
-        const whatsappGeneralMessage = encodeURIComponent(generalTemplate);
-
+        
         document.getElementById('shopDetails').innerHTML = `
             <div class="header-bar"><a href="view.html" class="back-btn"><i class="fas fa-arrow-right"></i> رجوع</a></div>
-            <div class="card" style="text-align:center;">
-                ${logo}
+            <div class="card">
+                ${d.shopLogo ? `<img src="${d.shopLogo}" class="shop-logo">` : `<div style="background:#e67e22; color:white; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto 5px auto;"><i class="fas fa-fire"></i></div>`}
                 <h1>${d.name}</h1>
-                <div id="ratingStats" style="font-size: 0.85rem; font-weight: 700; color: #64748b;">جاري التحميل...</div>
+                <div id="ratingStats" style="font-size: 0.85rem; font-weight: 700; color: #64748b;">جاري تحميل التقييمات...</div>
                 <div id="stars">${[1,2,3,4,5].map(n => `<i class="fas fa-star" data-value="${n}"></i>`).join('')}</div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
                     <a href="${d.mapLink}" target="_blank" class="btn" style="background:#3b82f6; flex:1;">الخريطة</a>
                     <a id="mainWhatsappBtn" href="#" target="_blank" class="btn" style="background:#25d366; flex:1;">واتساب</a>
                 </div>
             </div>
-
-            <a id="deliveryLink" href="#" target="_blank" class="delivery-link">
-                <div id="deliveryBar" class="delivery-bar unavailable">
-                    <span id="deliveryStatus">جاري الفحص...</span>
-                </div>
-            </a>
-
+            <div id="deliveryBar" class="delivery-bar">جاري فحص التوصيل...</div>
             <h3>المخزون المتوفر:</h3>
             <div id="inventory" class="inventory-grid"></div>
-            <div class="notice-banner">
-                <i class="fas fa-info-circle"></i> الأسعار الموضحة أعلاه هي قيمة أسطوانة الغاز فقط، وتضاف رسوم التوصيل حسب الموقع.
-            </div>`;
+            <div class="notice-banner"><i class="fas fa-info-circle"></i> الأسعار قيمة الأسطوانة فقط.</div>`;
 
-        db.collection("distributors").doc(shopId).onSnapshot(shopDoc => {
-            if(shopDoc.exists) {
-                const shopData = shopDoc.data();
-                const deliveryAvailable = shopData.deliveryAvailable || false;
-                const mainWhatsappBtn = document.getElementById('mainWhatsappBtn');
-                const linkEl = document.getElementById('deliveryLink');
-                const barEl = document.getElementById('deliveryBar');
-                const statusEl = document.getElementById('deliveryStatus');
-                
-                if(deliveryAvailable) {
-                    mainWhatsappBtn.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappDeliveryMessage}`;
-                    linkEl.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappDeliveryMessage}`;
-                    linkEl.style.pointerEvents = "auto";
-                    barEl.className = "delivery-bar available";
-                    statusEl.innerHTML = `<span style="color: #0369a1;"><i class="fas fa-truck fa-lg"></i> خدمة التوصيل متاحة (اضغط للطلب)</span>`;
-                } else {
-                    mainWhatsappBtn.href = `https://wa.me/${shopData.whatsappNumber}?text=${whatsappGeneralMessage}`;
-                    linkEl.href = "#";
-                    linkEl.style.pointerEvents = "none";
-                    barEl.className = "delivery-bar unavailable";
-                    statusEl.innerHTML = `<span style="color: #64748b;"><i class="fas fa-times-circle"></i> خدمة التوصيل غير متاحة حالياً</span>`;
-                }
-            }
+        // تفعيل التقييم (جلب، إضافة، تعديل تلقائي)
+        const stars = document.querySelectorAll('#stars i');
+        
+        // 1. جلب التقييمات وتحديث الواجهة لحظياً
+        db.collection("ratings").where("distributorId", "==", shopId).onSnapshot(snap => {
+            let total = 0, count = snap.size;
+            snap.forEach(doc => total += doc.data().stars);
+            let avg = count > 0 ? (total / count).toFixed(1) : 0;
+            document.getElementById('ratingStats').innerText = `التقييم: ${avg} (${count} تقييم)`;
+            stars.forEach((star, index) => {
+                star.classList.toggle('active', index < Math.round(avg));
+            });
         });
 
+        // 2. إرسال/تعديل تقييم
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.getAttribute('data-value'));
+                db.collection("ratings").where("distributorId", "==", shopId).where("deviceId", "==", deviceId).get().then(snap => {
+                    if (!snap.empty) {
+                        db.collection("ratings").doc(snap.docs[0].id).update({ stars: rating });
+                    } else {
+                        db.collection("ratings").add({ distributorId: shopId, stars: rating, deviceId: deviceId, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    }
+                });
+            });
+        });
+
+        // تحديث حالة التوصيل
+        db.collection("distributors").doc(shopId).onSnapshot(s => {
+            const data = s.data();
+            const bar = document.getElementById('deliveryBar');
+            bar.className = `delivery-bar ${data.deliveryAvailable ? 'available' : 'unavailable'}`;
+            bar.innerText = data.deliveryAvailable ? '✅ خدمة التوصيل متاحة' : '❌ خدمة التوصيل غير متاحة';
+        });
+
+        // تحديث المخزون
         db.collection("gas_inventory").where("distributorId", "==", shopId).onSnapshot(snap => {
-            const statusColors = { 'متوفر': { bg: '#dcfce7', text: '#166534' }, 'قليل': { bg: '#ffedd5', text: '#9a3412' }, 'غير متوفر': { bg: '#f1f5f9', text: '#475569' } };
-            const invContainer = document.getElementById('inventory');
-            if(!invContainer) return;
-            invContainer.innerHTML = snap.empty ? `<div class="card" style="text-align:center; color:#64748b;">لا يوجد مخزون حالياً</div>` :
-                snap.docs.map(doc => {
-                    const i = doc.data(); 
-                    const s = statusColors[i.status] || statusColors['غير متوفر'];
-                    return `<div class="item-card">
-                        <div><b>${i.cylinderType}</b><br><span class="status-pill" style="background:${s.bg}; color:${s.text};">${i.status}</span>
-                        <span class="update-time">تاريخ التحديث: ${formatDateTime(i.lastUpdated)}</span></div>
-                        <div style="text-align:left;">
-                            <div class="price-text">${i.price} ج.س</div>
-                        </div>
-                    </div>`;
-                }).join('');
+            document.getElementById('inventory').innerHTML = snap.docs.map(doc => {
+                const i = doc.data();
+                return `<div class="item-card"><div><b>${i.cylinderType}</b></div><div class="price-text">${i.price} ج.س</div></div>`;
+            }).join('');
         });
     });
 </script>
