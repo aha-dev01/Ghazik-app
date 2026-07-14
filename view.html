@@ -9,10 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f97316">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/JhNMNF8Y/1782113129362.png">
-    
     <style>
         body { font-family: 'Cairo', sans-serif; background: #f8fafc; margin: 0; color: #334155; }
         .hero { background: linear-gradient(135deg, #1e293b, #f97316); color: white; padding: 30px 20px; text-align: center; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; }
@@ -21,20 +17,48 @@
         .container { max-width: 500px; margin: auto; padding: 20px; }
         .search-box { width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-sizing: border-box; font-family: 'Cairo'; }
         
+        /* تصميم الكروت */
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-right: 5px solid #22c55e; position: relative; }
         .card.closed { border-right-color: #ef4444; opacity: 0.8; }
         .status-badge { position: absolute; top: 10px; left: 10px; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
         .rating-badge { color: #f59e0b; font-size: 12px; font-weight: bold; margin-top: 5px; }
         .store-icon { background: #fff7ed; padding: 15px; border-radius: 15px; color: #f97316; font-size: 20px; }
         
-        .ad-banner { background: #e0f2f1; padding: 20px; border-radius: 20px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: flex-start; position: relative; border: 1px solid #c8e6c9; animation: pulse-border 2s infinite; }
+        /* تصميم كرت الإعلان المميز */
+        .ad-banner { 
+            background: #e0f2f1; 
+            padding: 20px; 
+            border-radius: 20px; 
+            margin-bottom: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start; 
+            position: relative; 
+            border: 1px solid #c8e6c9;
+            animation: pulse-border 2s infinite;
+        }
         .ad-banner h3 { margin: 0 0 10px 0; color: #1e293b; font-size: 18px; border-bottom: 2px solid #f97316; padding-bottom: 5px; }
         .ad-banner p { margin: 0 0 15px 0; color: #475569; font-size: 14px; }
-        .register-btn { background: #f97316; color: white; padding: 12px 30px; border-radius: 15px; text-decoration: none; font-weight: 900; font-size: 15px; box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3); transition: transform 0.2s; }
+        .register-btn { 
+            background: #f97316; 
+            color: white; 
+            padding: 12px 30px; 
+            border-radius: 15px; 
+            text-decoration: none; 
+            font-weight: 900; 
+            font-size: 15px; 
+            box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3);
+            transition: transform 0.2s;
+        }
         .register-btn:hover { transform: scale(1.05); }
         .fire-icon { position: absolute; top: 15px; left: 15px; color: #f97316; font-size: 24px; }
 
-        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); } 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+        }
+        
         .footer-brand { text-align: center; padding: 30px 20px; color: #94a3b8; font-size: 13px; }
     </style>
 </head>
@@ -68,7 +92,7 @@
     const db = firebase.firestore();
 
     let allDistributors = [];
-    let allRatings = []; // المتغير الجديد للتقييمات
+    let allRatings = []; // تم تحديثها من allReviews
     let allInventory = [];
 
     auth.onAuthStateChanged(async (user) => {
@@ -117,7 +141,6 @@
         } else {
             htmlContent += filtered.map(d => {
                 const isClosed = d.isClosed || false;
-                // حساب التقييم من المصفوفة المحدثة
                 const shopRatings = allRatings.filter(r => r.distributorId === d.id);
                 const avg = shopRatings.length > 0 ? (shopRatings.reduce((sum, r) => sum + (r.stars || 0), 0) / shopRatings.length) : 0;
                 
@@ -129,14 +152,13 @@
                     <div>
                         <h3 style="margin:0;">${d.name || 'متجر غير مسمى'}</h3>
                         <p style="font-size:13px; color:#64748b; margin:5px 0 0;"><i class="fas fa-map-marker-alt"></i> ${d.mapDesc}</p>
-                        <div class="rating-badge">
-                            ${avg > 0 ? `<i class="fas fa-star"></i> ${avg.toFixed(1)} (${shopRatings.length} تقييم)` : 'لا يوجد تقييمات'}
-                        </div>
+                        <div class="rating-badge">${avg > 0 ? `<i class="fas fa-star"></i> ${avg.toFixed(1)} (${shopRatings.length})` : 'لا يوجد تقييمات'}</div>
                     </div>
                     <div class="store-icon"><i class="fas fa-store"></i></div>
                 </div>`;
             }).join('');
         }
+
         listContainer.innerHTML = htmlContent;
     }
 </script>
